@@ -10,19 +10,17 @@
  *  Henrich Kraemer - bug 263869, testHttpsReceiveFile fails using HTTP proxy
  *****************************************************************************/
 
-package de.yatta.ecf.provider.filetransfer.httpclient45;
+package de.yatta.ecf.internal.provider.filetransfer.httpclient45;
 
 import java.io.IOException;
-import java.net.Socket;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
+
 import org.eclipse.ecf.core.util.StringUtils;
-import org.eclipse.ecf.filetransfer.events.socketfactory.INonconnectedSocketFactory;
 
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.ISSLSocketFactoryModifier;
-
-public class HttpClientDefaultSSLSocketFactoryModifier implements ISSLSocketFactoryModifier, INonconnectedSocketFactory
+public class HttpClientDefaultSSLSocketFactoryModifier
 {
    public static final String DEFAULT_SSL_PROTOCOL = "https.protocols"; //$NON-NLS-1$
 
@@ -76,20 +74,4 @@ public class HttpClientDefaultSSLSocketFactoryModifier implements ISSLSocketFact
       }
       return rtvContext;
    }
-
-   public Socket createSocket() throws IOException
-   {
-      return getSSLSocketFactory().createSocket();
-   }
-
-   public void dispose()
-   {
-      // empty
-   }
-
-   public INonconnectedSocketFactory getNonconnnectedSocketFactory()
-   {
-      return this;
-   }
-
 }

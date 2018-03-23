@@ -4,7 +4,7 @@
  * the Eclipse Public License v1.0 which accompanies this distribution, and is
  * available at http://www.eclipse.org/legal/epl-v10.html
  *
- * Contributors: 
+ * Contributors:
  *  Composent, Inc. - initial API and implementation
  *  Maarten Meijer - bug 237936, added gzip encoded transfer default
  *  Henrich Kraemer - bug 263869, testHttpsReceiveFile fails using HTTP proxy
@@ -17,37 +17,26 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLSocketFactory;
+
 import org.apache.http.Header;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
-import org.apache.http.auth.NTCredentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.auth.params.AuthPNames;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.params.AuthPolicy;
-import org.apache.http.client.protocol.RequestAcceptEncoding;
-import org.apache.http.client.protocol.ResponseContentEncoding;
-import org.apache.http.conn.params.ConnRouteParams;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.cookie.DateUtils;
-import org.apache.http.params.CoreConnectionPNames;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.HttpContext;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.client.utils.DateUtils;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.IPath;
@@ -63,11 +52,9 @@ import org.eclipse.ecf.core.security.IConnectContext;
 import org.eclipse.ecf.core.security.NameCallback;
 import org.eclipse.ecf.core.security.ObjectCallback;
 import org.eclipse.ecf.core.security.UnsupportedCallbackException;
-import org.eclipse.ecf.core.util.ECFRuntimeException;
 import org.eclipse.ecf.core.util.Proxy;
 import org.eclipse.ecf.core.util.ProxyAddress;
 import org.eclipse.ecf.core.util.Trace;
-import org.eclipse.ecf.filetransfer.BrowseFileTransferException;
 import org.eclipse.ecf.filetransfer.FileTransferJob;
 import org.eclipse.ecf.filetransfer.IFileRangeSpecification;
 import org.eclipse.ecf.filetransfer.IFileTransferPausable;
@@ -76,10 +63,8 @@ import org.eclipse.ecf.filetransfer.IRetrieveFileTransferOptions;
 import org.eclipse.ecf.filetransfer.IncomingFileTransferException;
 import org.eclipse.ecf.filetransfer.InvalidFileRangeSpecificationException;
 import org.eclipse.ecf.filetransfer.events.IFileTransferConnectStartEvent;
-import org.eclipse.ecf.filetransfer.events.socket.ISocketEventSource;
-import org.eclipse.ecf.filetransfer.events.socket.ISocketListener;
 import org.eclipse.ecf.filetransfer.identity.IFileID;
-import org.eclipse.ecf.provider.filetransfer.events.socket.SocketEventSource;
+import org.eclipse.ecf.internal.provider.filetransfer.DebugOptions;
 import org.eclipse.ecf.provider.filetransfer.identity.FileTransferID;
 import org.eclipse.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer;
 import org.eclipse.ecf.provider.filetransfer.retrieve.HttpHelper;
@@ -88,27 +73,16 @@ import org.eclipse.ecf.provider.filetransfer.util.ProxySetupHelper;
 import org.eclipse.osgi.util.NLS;
 
 import de.yatta.ecf.internal.provider.filetransfer.httpclient45.Activator;
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.ConnectingSocketMonitor;
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.DebugOptions;
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.ECFHttpClientProtocolSocketFactory;
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.ECFHttpClientSecureProtocolSocketFactory;
+import de.yatta.ecf.internal.provider.filetransfer.httpclient45.ECFHttpClientFactory;
 import de.yatta.ecf.internal.provider.filetransfer.httpclient45.HttpClientProxyCredentialProvider;
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.ISSLSocketFactoryModifier;
+import de.yatta.ecf.internal.provider.filetransfer.httpclient45.IHttpClientFactory;
 import de.yatta.ecf.internal.provider.filetransfer.httpclient45.Messages;
+import de.yatta.ecf.internal.provider.filetransfer.httpclient45.NTLMProxyDetector;
 
 public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
 {
 
    private static final String USERNAME_PREFIX = Messages.HttpClientRetrieveFileTransfer_Username_Prefix;
-
-   // changing to 2 minutes (120000) as per bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=266246
-   // 10/26/2009:  Added being able to set with system property with name de.yatta.ecf.provider.filetransfer.httpclient45.retrieve.connectTimeout
-   // for https://bugs.eclipse.org/bugs/show_bug.cgi?id=292995
-   protected static final int DEFAULT_CONNECTION_TIMEOUT = HttpClientOptions.RETRIEVE_DEFAULT_CONNECTION_TIMEOUT;
-   // changing to 2 minutes (120000) as per bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=266246
-   // 10/26/2009:  Added being able to set with system property with name de.yatta.ecf.provider.filetransfer.httpclient45.retrieve.readTimeout
-   // for https://bugs.eclipse.org/bugs/show_bug.cgi?id=292995
-   protected static final int DEFAULT_READ_TIMEOUT = HttpClientOptions.RETRIEVE_DEFAULT_READ_TIMEOUT;
 
    protected static final int HTTP_PORT = 80;
 
@@ -116,9 +90,9 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
 
    protected static final int MAX_RETRY = 2;
 
-   protected static final String HTTPS = Messages.FileTransferNamespace_Https_Protocol;
+   protected static final String HTTPS = "https"; //$NON-NLS-1$
 
-   protected static final String HTTP = Messages.FileTransferNamespace_Http_Protocol;
+   protected static final String HTTP = "http"; //$NON-NLS-1$
 
    protected static final String[] supportedProtocols = { HTTP, HTTPS };
 
@@ -126,11 +100,13 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
 
    private HttpGet getMethod = null;
 
-   private HttpResponse httpResponse = null;
+   private CloseableHttpResponse httpResponse = null;
 
-   private HttpContext httpContext = null;
+   private CloseableHttpClient httpClient;
 
-   private DefaultHttpClient httpClient = null;
+   private HttpClientContext httpContext;
+
+   private RequestConfig.Builder requestConfigBuilder;
 
    private String username;
 
@@ -145,93 +121,32 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
 
    protected IFileID fileid = null;
 
+   private ECFCredentialsProvider credentialsProvider;
+
    protected JREProxyHelper proxyHelper = null;
 
-   private SocketEventSource socketEventSource;
-
-   private ConnectingSocketMonitor connectingSockets;
    private FileTransferJob connectJob;
 
-   /**
-    * @param httpClient http client
-    * @since 5.0
-    */
-   public HttpClientRetrieveFileTransfer(DefaultHttpClient httpClient)
+   public HttpClientRetrieveFileTransfer(CloseableHttpClient client)
    {
-      this.httpClient = httpClient;
-      Assert.isNotNull(this.httpClient);
-      this.httpClient.setCredentialsProvider(new ECFCredentialsProvider());
+      Assert.isNotNull(client);
+      this.httpClient = client;
+
+      IHttpClientFactory httpClientFactory = Activator.getDefault().getHttpClientFactory();
+      credentialsProvider = new ECFCredentialsProvider();
+      CredentialsProvider contextCredentialsProvider = ECFHttpClientFactory.modifyCredentialsProvider(credentialsProvider);
+      httpContext = httpClientFactory.newClientContext();
+      httpContext.setCredentialsProvider(contextCredentialsProvider);
       proxyHelper = new JREProxyHelper();
-      connectingSockets = new ConnectingSocketMonitor(1);
-      socketEventSource = new SocketEventSource() {
-         public Object getAdapter(Class adapter)
-         {
-            if (adapter == null)
-            {
-               return null;
-            }
-            if (adapter.isInstance(this))
-            {
-               return this;
-            }
-            return HttpClientRetrieveFileTransfer.this.getAdapter(adapter);
-         }
-
-      };
-
-      registerSchemes(socketEventSource, connectingSockets);
    }
 
-   private synchronized void registerSchemes(ISocketEventSource source, ISocketListener socketListener)
-   {
-      SchemeRegistry schemeRegistry = this.httpClient.getConnectionManager().getSchemeRegistry();
-
-      Scheme http = new Scheme(HttpClientRetrieveFileTransfer.HTTP, HTTP_PORT, new ECFHttpClientProtocolSocketFactory(SocketFactory.getDefault(), source, socketListener));
-
-      Trace.trace(Activator.PLUGIN_ID, "registering http scheme"); //$NON-NLS-1$
-      schemeRegistry.register(http);
-
-      ISSLSocketFactoryModifier sslSocketFactoryModifier = Activator.getDefault().getSSLSocketFactoryModifier();
-
-      if (sslSocketFactoryModifier == null)
-      {
-         sslSocketFactoryModifier = new HttpClientDefaultSSLSocketFactoryModifier();
-      }
-
-      SSLSocketFactory sslSocketFactory = null;
-      try
-      {
-         sslSocketFactory = sslSocketFactoryModifier.getSSLSocketFactory();
-      }
-      catch (IOException e)
-      {
-         Trace.catching(Activator.PLUGIN_ID, DebugOptions.EXCEPTIONS_CATCHING, ISSLSocketFactoryModifier.class, "getSSLSocketFactory()", e); //$NON-NLS-1$
-         Trace.throwing(Activator.PLUGIN_ID, DebugOptions.EXCEPTIONS_THROWING, HttpClientRetrieveFileTransfer.class, "registerSchemes()", e); //$NON-NLS-1$
-         throw new ECFRuntimeException("Unable to instantiate schemes for HttpClient.", e); //$NON-NLS-1$
-      }
-
-      Scheme https = new Scheme(HttpClientRetrieveFileTransfer.HTTPS, HTTPS_PORT, new ECFHttpClientSecureProtocolSocketFactory(sslSocketFactory, source, socketListener));
-      Trace.trace(Activator.PLUGIN_ID, "registering https scheme; modifier=" + sslSocketFactoryModifier); //$NON-NLS-1$
-      schemeRegistry.register(https);
-
-      // SPNEGO is not supported, so remove it from the list
-      List authpref = new ArrayList(3);
-      authpref.add(AuthPolicy.NTLM);
-      authpref.add(AuthPolicy.DIGEST);
-      authpref.add(AuthPolicy.BASIC);
-
-      httpClient.getParams().setParameter(AuthPNames.PROXY_AUTH_PREF, authpref);
-      httpClient.getParams().setParameter(AuthPNames.TARGET_AUTH_PREF, authpref);
-   }
-
-   /* (non-Javadoc)
-    * @see org.eclipse.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#getRemoteFileName()
-    */
+   @Override
    public String getRemoteFileName()
    {
       return remoteFileName;
    }
 
+   @Override
    public synchronized void cancel()
    {
       Trace.entering(Activator.PLUGIN_ID, DebugOptions.METHODS_ENTERING, this.getClass(), "cancel"); //$NON-NLS-1$
@@ -256,18 +171,10 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
             job.cancel();
          }
       }
-      if (getMethod != null)
+      if (getMethod != null && !getMethod.isAborted())
       {
-         if (!getMethod.isAborted())
-         {
-            Trace.trace(Activator.PLUGIN_ID, "calling getMethod.abort()"); //$NON-NLS-1$
-            getMethod.abort();
-         }
-      }
-      if (connectingSockets != null)
-      {
-         // Added to prevent CME in bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=430704
-         connectingSockets.closeSockets();
+         Trace.trace(Activator.PLUGIN_ID, "calling getMethod.abort()"); //$NON-NLS-1$
+         getMethod.abort();
       }
       hardClose();
       if (fireDoneEvent)
@@ -281,8 +188,9 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
    /*
     * (non-Javadoc)
     *
-    * @see org.eclipse.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#hardClose()
+    * @see de.yatta.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#hardClose()
     */
+   @Override
    protected void hardClose()
    {
       // changed for addressing bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=389292
@@ -290,17 +198,35 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
       {
          // First, if !isDone and paused
          if (!isDone() && isPaused())
+         {
             getMethod.abort();
+         }
          // release in any case
          //getMethod.releaseConnection();
          // and set to null
          getMethod = null;
       }
+
+      if (httpResponse != null && !isDone() && isPaused())
+      {
+         try
+         {
+            httpResponse.close();
+         }
+         catch (final IOException e)
+         {
+            Activator.getDefault().log(new Status(IStatus.ERROR, Activator.PLUGIN_ID, IStatus.ERROR, "hardClose", e)); //$NON-NLS-1$
+         }
+         httpResponse = null;
+      }
+
       // Close output stream...if we're supposed to
       try
       {
          if (localFileContents != null && closeOutputStream)
+         {
             localFileContents.close();
+         }
       }
       catch (final IOException e)
       {
@@ -328,10 +254,14 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
    protected Credentials getFileRequestCredentials() throws UnsupportedCallbackException, IOException
    {
       if (connectContext == null)
+      {
          return null;
+      }
       final CallbackHandler callbackHandler = connectContext.getCallbackHandler();
       if (callbackHandler == null)
+      {
          return null;
+      }
       final NameCallback usernameCallback = new NameCallback(USERNAME_PREFIX);
       final ObjectCallback passwordCallback = new ObjectCallback();
       callbackHandler.handle(new Callback[] { usernameCallback, passwordCallback });
@@ -340,6 +270,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
       return new UsernamePasswordCredentials(username, password);
    }
 
+   @Override
    protected void setupProxies()
    {
       // If it's been set directly (via ECF API) then this overrides platform settings
@@ -362,16 +293,30 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
          }
       }
       if (proxy != null)
+      {
          setupProxy(proxy);
+      }
    }
 
+   @Override
    protected synchronized void resetDoneAndException()
    {
       // Doesn't match the description, but since it should be cleared before it is
       // reused, this is the best place.
       clearProxy();
+      getMethod = null;
+      requestConfigBuilder = null;
 
       super.resetDoneAndException();
+   }
+
+   private synchronized RequestConfig.Builder getRequestConfigBuilder()
+   {
+      if (requestConfigBuilder == null)
+      {
+         requestConfigBuilder = Activator.getDefault().getHttpClientFactory().newRequestConfig(httpContext, getOptions());
+      }
+      return requestConfigBuilder;
    }
 
    protected void setupAuthentication(String urlString) throws UnsupportedCallbackException, IOException
@@ -386,54 +331,78 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
       {
          final AuthScope authScope = new AuthScope(getHostFromURL(urlString), getPortFromURL(urlString), AuthScope.ANY_REALM);
          Trace.trace(Activator.PLUGIN_ID, "retrieve credentials=" + credentials); //$NON-NLS-1$
-         httpClient.getCredentialsProvider().setCredentials(authScope, credentials);
+         credentialsProvider.setCredentials(authScope, credentials);
       }
    }
 
    protected void setRequestHeaderValues() throws InvalidFileRangeSpecificationException
    {
       final IFileRangeSpecification rangeSpec = getFileRangeSpecification();
-      if (rangeSpec != null)
-      {
-         final long startPosition = rangeSpec.getStartPosition();
-         final long endPosition = rangeSpec.getEndPosition();
-         if (startPosition < 0)
-            throw new InvalidFileRangeSpecificationException(Messages.HttpClientRetrieveFileTransfer_RESUME_START_POSITION_LESS_THAN_ZERO, rangeSpec);
-         if (endPosition != -1L && endPosition <= startPosition)
-            throw new InvalidFileRangeSpecificationException(Messages.HttpClientRetrieveFileTransfer_RESUME_ERROR_END_POSITION_LESS_THAN_START, rangeSpec);
-         String rangeHeader = "bytes=" + startPosition + "-" + ((endPosition == -1L) ? "" : ("" + endPosition)); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
-         Trace.trace(Activator.PLUGIN_ID, "retrieve range header=" + rangeHeader); //$NON-NLS-1$
-         setRangeHeader(rangeHeader);
-      }
+      setRangeHeader(rangeSpec, -1);
+
       int maxAge = Integer.getInteger("org.eclipse.ecf.http.cache.max-age", 0); //$NON-NLS-1$
       // set max-age for cache control to 0 for bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=249990
       // fix the fix for bug 249990 with bug 410813
       if (maxAge == 0)
       {
-         getMethod.addHeader("Cache-Control", "max-age=0"); //$NON-NLS-1$//$NON-NLS-2$
+         getMethod.addHeader(HttpHeaders.CACHE_CONTROL, "max-age=0"); //$NON-NLS-1$
       }
       else if (maxAge > 0)
       {
-         getMethod.addHeader("Cache-Control", "max-age=" + maxAge); //$NON-NLS-1$//$NON-NLS-2$
+         getMethod.addHeader(HttpHeaders.CACHE_CONTROL, "max-age=" + maxAge); //$NON-NLS-1$
       }
       setRequestHeaderValuesFromOptions();
    }
 
+   private void setRangeHeader(final IFileRangeSpecification rangeSpec, final long resumePosition) throws InvalidFileRangeSpecificationException
+   {
+      final long startPosition;
+      final long endPosition;
+      if (rangeSpec != null)
+      {
+         startPosition = Math.max(resumePosition, rangeSpec.getStartPosition());
+         endPosition = rangeSpec.getEndPosition();
+         if (startPosition < 0)
+         {
+            throw new InvalidFileRangeSpecificationException(Messages.HttpClientRetrieveFileTransfer_RESUME_START_POSITION_LESS_THAN_ZERO, rangeSpec);
+         }
+         if (endPosition != -1L && endPosition <= startPosition)
+         {
+            throw new InvalidFileRangeSpecificationException(Messages.HttpClientRetrieveFileTransfer_RESUME_ERROR_END_POSITION_LESS_THAN_START, rangeSpec);
+         }
+      }
+      else if (resumePosition > 0)
+      {
+         startPosition = resumePosition;
+         endPosition = -1L;
+      }
+      else
+      {
+         //No range header needed
+         return;
+      }
+      String rangeHeader = "bytes=" + startPosition + "-" + ((endPosition == -1L) ? "" : ("" + endPosition)); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+      Trace.trace(Activator.PLUGIN_ID, "retrieve range header=" + rangeHeader); //$NON-NLS-1$
+      setRangeHeader(rangeHeader);
+   }
+
    private void setRequestHeaderValuesFromOptions()
    {
-      Map localOptions = getOptions();
+      Map<?, ?> localOptions = getOptions();
       if (localOptions != null)
       {
          Object o = localOptions.get(IRetrieveFileTransferOptions.REQUEST_HEADERS);
          if (o != null && o instanceof Map)
          {
-            Map requestHeaders = (Map)o;
-            for (Iterator i = requestHeaders.keySet().iterator(); i.hasNext();)
+            Map<?, ?> requestHeaders = (Map<?, ?>)o;
+            for (Iterator<?> i = requestHeaders.keySet().iterator(); i.hasNext();)
             {
                Object n = i.next();
                Object v = requestHeaders.get(n);
                if (n != null && n instanceof String && v != null && v instanceof String)
+               {
                   getMethod.addHeader((String)n, (String)v);
+               }
             }
          }
       }
@@ -441,7 +410,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
 
    private void setRangeHeader(String value)
    {
-      getMethod.addHeader("Range", value); //$NON-NLS-1$
+      getMethod.setHeader(HttpHeaders.RANGE, value);
    }
 
    private boolean isHTTP11()
@@ -452,7 +421,9 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
    public int getResponseCode()
    {
       if (responseCode != -1)
+      {
          return responseCode;
+      }
       ProtocolVersion version = getMethod.getProtocolVersion();
       if (version == null)
       {
@@ -470,6 +441,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
     *
     * @see org.eclipse.ecf.core.identity.IIdentifiable#getID()
     */
+   @Override
    public ID getID()
    {
       return fileid;
@@ -479,7 +451,9 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
    {
       Header lastModifiedHeader = httpResponse.getLastHeader(LAST_MODIFIED_HEADER);
       if (lastModifiedHeader == null)
+      {
          throw new IOException(Messages.HttpClientRetrieveFileTransfer_INVALID_LAST_MODIFIED_TIME);
+      }
 
       String lastModifiedString = lastModifiedHeader.getValue();
       long lastModified = 0;
@@ -500,7 +474,9 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
    protected void getResponseHeaderValues() throws IOException
    {
       if (getResponseCode() == -1)
+      {
          throw new IOException(Messages.HttpClientRetrieveFileTransfer_INVALID_SERVER_RESPONSE_TO_PARTIAL_RANGE_REQUEST);
+      }
       Header lastModifiedHeader = httpResponse.getLastHeader(LAST_MODIFIED_HEADER);
       if (lastModifiedHeader != null)
       {
@@ -525,28 +501,32 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
          {
             IPath path = Path.fromPortableString(pathStr);
             if (path.segmentCount() > 0)
+            {
                remoteFileName = path.lastSegment();
+            }
          }
          // If still null, use the input file name
          if (remoteFileName == null)
+         {
             // Last resort. Use the path of the initial URL request
             remoteFileName = super.getRemoteFileName();
+         }
       }
    }
 
    final class ECFCredentialsProvider extends HttpClientProxyCredentialProvider
    {
 
+      @Override
       protected Proxy getECFProxy()
       {
          return getProxy();
       }
 
-      protected Credentials getNTLMCredentials(Proxy lp)
+      @Override
+      protected boolean allowNTLMAuthentication()
       {
-         if (hasForceNTLMProxyOption())
-            return HttpClientRetrieveFileTransfer.createNTLMCredentials(lp);
-         return null;
+         return ECFHttpClientFactory.getNTLMProxyHandler(httpContext).allowNTLMAuthentication(getOptions());
       }
 
    }
@@ -556,11 +536,13 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
       return proxy;
    }
 
+   @Override
    protected void setInputStream(InputStream ins)
    {
       remoteFileContents = ins;
    }
 
+   @Override
    protected InputStream wrapTransferReadInputStream(InputStream inputStream, IProgressMonitor monitor)
    {
       // Added to address bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=389292
@@ -576,24 +558,18 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
          super(in);
       }
 
+      @Override
       public void close()
       {
          // do nothing
       }
    }
 
-   protected boolean hasForceNTLMProxyOption()
-   {
-      Map localOptions = getOptions();
-      if (localOptions != null && localOptions.get(HttpClientOptions.FORCE_NTLM_PROP) != null)
-         return true;
-      return (System.getProperties().getProperty(HttpClientOptions.FORCE_NTLM_PROP) != null);
-   }
-
+   @Override
    protected int getSocketReadTimeout()
    {
-      int result = DEFAULT_READ_TIMEOUT;
-      Map localOptions = getOptions();
+      int result = ECFHttpClientFactory.DEFAULT_READ_TIMEOUT;
+      Map<?, ?> localOptions = getOptions();
       if (localOptions != null)
       {
          // See if the connect timeout option is present, if so set
@@ -610,7 +586,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
             }
             return result;
          }
-         o = localOptions.get("de.yatta.ecf.provider.filetransfer.httpclient45.retrieve.readTimeout"); //$NON-NLS-1$
+         o = localOptions.get("org.eclipse.ecf.provider.filetransfer.httpclient4.retrieve.readTimeout"); //$NON-NLS-1$
          if (o != null)
          {
             if (o instanceof Integer)
@@ -632,8 +608,8 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
     */
    protected int getConnectTimeout()
    {
-      int result = DEFAULT_CONNECTION_TIMEOUT;
-      Map localOptions = getOptions();
+      int result = ECFHttpClientFactory.DEFAULT_CONNECTION_TIMEOUT;
+      Map<?, ?> localOptions = getOptions();
       if (localOptions != null)
       {
          // See if the connect timeout option is present, if so set
@@ -650,7 +626,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
             }
             return result;
          }
-         o = localOptions.get("de.yatta.ecf.provider.filetransfer.httpclient45.retrieve.connectTimeout"); //$NON-NLS-1$
+         o = localOptions.get("org.eclipse.ecf.provider.filetransfer.httpclient4.retrieve.connectTimeout"); //$NON-NLS-1$
          if (o != null)
          {
             if (o instanceof Integer)
@@ -667,8 +643,9 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
    }
 
    /* (non-Javadoc)
-    * @see org.eclipse.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#openStreams()
+    * @see de.yatta.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#openStreams()
     */
+   @Override
    protected void openStreams() throws IncomingFileTransferException
    {
 
@@ -680,13 +657,12 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
 
       try
       {
-         httpClient.getParams().setIntParameter(CoreConnectionPNames.SO_TIMEOUT, getSocketReadTimeout());
-         int connectTimeout = getConnectTimeout();
-         httpClient.getParams().setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, connectTimeout);
+         getMethod = new HttpGet(urlString);
+         RequestConfig.Builder rcfgBuilder = getRequestConfigBuilder();
+         rcfgBuilder.setSocketTimeout(getSocketReadTimeout()).setConnectTimeout(getConnectTimeout());
 
          setupAuthentication(urlString);
 
-         getMethod = new HttpGet(urlString);
          // Define a CredentialsProvider - found that possibility while debugging in org.apache.commons.httpclient.HttpMethodDirector.processProxyAuthChallenge(HttpMethod)
          // Seems to be another way to select the credentials.
          setRequestHeaderValues();
@@ -697,16 +673,16 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
          // 2) The target remote file does *not* end in .gz (see bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=280205)
          if (getFileRangeSpecification() == null && !targetHasGzSuffix(super.getRemoteFileName()))
          {
+            // The interceptors to provide gzip are always added and are enabled by default
             Trace.trace(Activator.PLUGIN_ID, "Accept-Encoding: gzip,deflate added to request header"); //$NON-NLS-1$
-
-            // Add the interceptors to provide the gzip 
-            httpClient.addRequestInterceptor(new RequestAcceptEncoding());
-            httpClient.addResponseInterceptor(new ResponseContentEncoding());
          }
          else
          {
+            // Disable the interceptors to provide gzip
             Trace.trace(Activator.PLUGIN_ID, "Accept-Encoding NOT added to header"); //$NON-NLS-1$
+            rcfgBuilder.setContentCompressionEnabled(false);
          }
+         getMethod.setConfig(rcfgBuilder.build());
 
          fireConnectStartEvent();
          if (checkAndHandleDone())
@@ -714,7 +690,6 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
             return;
          }
 
-         connectingSockets.clear();
          // Actually execute get and get response code (since redirect is set to true, then
          // redirect response code handled internally
          if (connectJob == null)
@@ -738,37 +713,41 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
 
          Trace.trace(Activator.PLUGIN_ID, "retrieve resp=" + code); //$NON-NLS-1$
 
-         // Check for NTLM proxy in response headers 
+         // Check for NTLM proxy in response headers
          // This check is to deal with bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=252002
          boolean ntlmProxyFound = NTLMProxyDetector.detectNTLMProxy(httpContext);
-         if (ntlmProxyFound && !hasForceNTLMProxyOption())
-            throw new IncomingFileTransferException("HttpClient Provider is not configured to support NTLM proxy authentication.", HttpClientOptions.NTLM_PROXY_RESPONSE_CODE); //$NON-NLS-1$
+         if (ntlmProxyFound)
+         {
+            ECFHttpClientFactory.getNTLMProxyHandler(httpContext).handleNTLMProxy(getProxy(), code);
+         }
 
          if (NTLMProxyDetector.detectSPNEGOProxy(httpContext))
-            throw new BrowseFileTransferException("HttpClient Provider does not support the use of SPNEGO proxy authentication."); //$NON-NLS-1$
+         {
+            ECFHttpClientFactory.getNTLMProxyHandler(httpContext).handleSPNEGOProxy(getProxy(), code);
+         }
 
-         if (code == HttpURLConnection.HTTP_PARTIAL || code == HttpURLConnection.HTTP_OK)
+         if (code == HttpStatus.SC_PARTIAL_CONTENT || code == HttpStatus.SC_OK)
          {
             getResponseHeaderValues();
             setInputStream(httpResponse.getEntity().getContent());
             fireReceiveStartEvent();
          }
-         else if (code == HttpURLConnection.HTTP_NOT_FOUND)
+         else if (code == HttpStatus.SC_NOT_FOUND)
          {
             EntityUtils.consume(httpResponse.getEntity());
             throw new IncomingFileTransferException(NLS.bind("File not found: {0}", urlString), code); //$NON-NLS-1$
          }
-         else if (code == HttpURLConnection.HTTP_UNAUTHORIZED)
+         else if (code == HttpStatus.SC_UNAUTHORIZED)
          {
             EntityUtils.consume(httpResponse.getEntity());
             throw new IncomingFileTransferException(Messages.HttpClientRetrieveFileTransfer_Unauthorized, code);
          }
-         else if (code == HttpURLConnection.HTTP_FORBIDDEN)
+         else if (code == HttpStatus.SC_FORBIDDEN)
          {
             EntityUtils.consume(httpResponse.getEntity());
             throw new IncomingFileTransferException("Forbidden", code); //$NON-NLS-1$
          }
-         else if (code == HttpURLConnection.HTTP_PROXY_AUTH)
+         else if (code == HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED)
          {
             EntityUtils.consume(httpResponse.getEntity());
             throw new IncomingFileTransferException(Messages.HttpClientRetrieveFileTransfer_Proxy_Auth_Required, code);
@@ -800,21 +779,25 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
       Trace.exiting(Activator.PLUGIN_ID, DebugOptions.METHODS_EXITING, this.getClass(), "openStreams"); //$NON-NLS-1$
    }
 
-   private Map getResponseHeaders()
+   private Map<String, String> getResponseHeaders()
    {
       if (getMethod == null)
+      {
          return null;
+      }
       Header[] headers = httpResponse.getAllHeaders();
-      Map result = null;
+      Map<String, String> result = null;
       if (headers != null && headers.length > 0)
       {
-         result = new HashMap();
+         result = new HashMap<String, String>();
          for (int i = 0; i < headers.length; i++)
          {
             String name = headers[i].getName();
             String val = headers[i].getValue();
             if (name != null && val != null)
+            {
                result.put(name, val);
+            }
          }
       }
       return Collections.unmodifiableMap(result);
@@ -839,6 +822,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
     *
     * @see org.eclipse.ecf.filetransfer.IRetrieveFileTransferContainerAdapter#setConnectContextForAuthentication(org.eclipse.ecf.core.security.IConnectContext)
     */
+   @Override
    public void setConnectContextForAuthentication(IConnectContext connectContext)
    {
       super.setConnectContextForAuthentication(connectContext);
@@ -851,7 +835,9 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
       String result = url;
       final int colonSlashSlash = url.indexOf("://"); //$NON-NLS-1$
       if (colonSlashSlash < 0)
+      {
          return ""; //$NON-NLS-1$
+      }
       if (colonSlashSlash >= 0)
       {
          result = url.substring(colonSlashSlash + 3);
@@ -863,12 +849,21 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
       int substringEnd;
 
       if (colonPort > 0 && requestPath > 0)
+      {
          substringEnd = Math.min(colonPort, requestPath);
+      }
       else if (colonPort > 0)
+      {
          substringEnd = colonPort;
+      }
       else if (requestPath > 0)
+      {
          substringEnd = requestPath;
-      else substringEnd = result.length();
+      }
+      else
+      {
+         substringEnd = result.length();
+      }
 
       return result.substring(0, substringEnd);
 
@@ -878,29 +873,44 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
    {
       final int colonSlashSlash = url.indexOf("://"); //$NON-NLS-1$
       if (colonSlashSlash < 0)
+      {
          return urlUsesHttps(url) ? HTTPS_PORT : HTTP_PORT;
-      // This is wrong as if the url has no colonPort before '?' then it should return the default
+         // This is wrong as if the url has no colonPort before '?' then it should return the default
+      }
 
       int colonPort = url.indexOf(':', colonSlashSlash + 1);
       if (colonPort < 0)
+      {
          return urlUsesHttps(url) ? HTTPS_PORT : HTTP_PORT;
+      }
       // Make sure that the colonPort is not from some part of the rest of the URL
       int nextSlash = url.indexOf('/', colonSlashSlash + 3);
       if (nextSlash != -1 && colonPort > nextSlash)
+      {
          return urlUsesHttps(url) ? HTTPS_PORT : HTTP_PORT;
+      }
       // Make sure the colonPort is not part of the credentials in URI
       final int atServer = url.indexOf('@', colonSlashSlash + 1);
       if (atServer != -1 && colonPort < atServer && atServer < nextSlash)
+      {
          colonPort = url.indexOf(':', atServer + 1);
+      }
       if (colonPort < 0)
+      {
          return urlUsesHttps(url) ? HTTPS_PORT : HTTP_PORT;
+      }
 
       final int requestPath = url.indexOf('/', colonPort + 1);
 
       int end;
       if (requestPath < 0)
+      {
          end = url.length();
-      else end = requestPath;
+      }
+      else
+      {
+         end = requestPath;
+      }
 
       return Integer.parseInt(url.substring(colonPort + 1, end));
    }
@@ -908,7 +918,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
    protected static boolean urlUsesHttps(String url)
    {
       url = url.trim();
-      return url.startsWith(HTTPS);
+      return url.startsWith(HTTPS + ":"); //$NON-NLS-1$
    }
 
    /*
@@ -919,8 +929,12 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
    public static boolean supportsProtocol(String protocolString)
    {
       for (int i = 0; i < supportedProtocols.length; i++)
+      {
          if (supportedProtocols[i].equalsIgnoreCase(protocolString))
+         {
             return true;
+         }
+      }
       return false;
    }
 
@@ -932,12 +946,15 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
    /*
     * (non-Javadoc)
     *
-    * @see org.eclipse.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#doPause()
+    * @see de.yatta.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#doPause()
     */
+   @Override
    protected boolean doPause()
    {
       if (isPaused() || !isConnected() || isDone())
+      {
          return false;
+      }
       this.paused = true;
       return this.paused;
    }
@@ -945,30 +962,38 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
    /*
     * (non-Javadoc)
     *
-    * @see org.eclipse.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#doResume()
+    * @see de.yatta.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#doResume()
     */
+   @Override
    protected boolean doResume()
    {
       if (!isPaused() || isConnected())
+      {
          return false;
+      }
       return openStreamsForResume();
    }
 
-   protected void setResumeRequestHeaderValues() throws IOException
+   protected void setResumeRequestHeaderValues() throws IOException, InvalidFileRangeSpecificationException
    {
       if (this.bytesReceived <= 0 || this.fileLength <= this.bytesReceived)
+      {
          throw new IOException(Messages.HttpClientRetrieveFileTransfer_RESUME_START_ERROR);
-      setRangeHeader("bytes=" + this.bytesReceived + "-"); //$NON-NLS-1$ //$NON-NLS-2$
+      }
+      setRequestHeaderValues();
+      final IFileRangeSpecification rangeSpec = getFileRangeSpecification();
+      setRangeHeader(rangeSpec, bytesReceived);
+
       int maxAge = Integer.getInteger("org.eclipse.ecf.http.cache.max-age", 0); //$NON-NLS-1$
       // set max-age for cache control to 0 for bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=249990
       // fix the fix for bug 249990 with bug 410813
       if (maxAge == 0)
       {
-         getMethod.addHeader("Cache-Control", "max-age=0"); //$NON-NLS-1$//$NON-NLS-2$
+         getMethod.addHeader(HttpHeaders.CACHE_CONTROL, "max-age=0"); //$NON-NLS-1$
       }
       else if (maxAge > 0)
       {
-         getMethod.addHeader("Cache-Control", "max-age=" + maxAge); //$NON-NLS-1$//$NON-NLS-2$
+         getMethod.addHeader(HttpHeaders.CACHE_CONTROL, "max-age=" + maxAge); //$NON-NLS-1$
       }
       setRequestHeaderValuesFromOptions();
    }
@@ -984,18 +1009,17 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
 
       try
       {
-         httpClient.getParams().setIntParameter(CoreConnectionPNames.SO_TIMEOUT, getSocketReadTimeout());
-         int connectTimeout = getConnectTimeout();
-         httpClient.getParams().setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, connectTimeout);
+         getMethod = new HttpGet(urlString);
+         requestConfigBuilder.setContentCompressionEnabled(false);
 
          setupAuthentication(urlString);
 
-         getMethod = new HttpGet(urlString);
          // Define a CredentialsProvider - found that possibility while debugging in org.apache.commons.httpclient.HttpMethodDirector.processProxyAuthChallenge(HttpMethod)
          // Seems to be another way to select the credentials.
          setResumeRequestHeaderValues();
 
          Trace.trace(Activator.PLUGIN_ID, "resume=" + urlString); //$NON-NLS-1$
+         getMethod.setConfig(requestConfigBuilder.build());
 
          // Gzip encoding is not an option for resume
          fireConnectStartEvent();
@@ -1004,7 +1028,6 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
             return false;
          }
 
-         connectingSockets.clear();
          // Actually execute get and get response code (since redirect is set to true, then
          // redirect response code handled internally
          if (connectJob == null)
@@ -1028,29 +1051,29 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
 
          Trace.trace(Activator.PLUGIN_ID, "retrieve resp=" + code); //$NON-NLS-1$
 
-         if (code == HttpURLConnection.HTTP_PARTIAL || code == HttpURLConnection.HTTP_OK)
+         if (code == HttpStatus.SC_PARTIAL_CONTENT || code == HttpStatus.SC_OK)
          {
             getResumeResponseHeaderValues();
             setInputStream(httpResponse.getEntity().getContent());
             this.paused = false;
             fireReceiveResumedEvent();
          }
-         else if (code == HttpURLConnection.HTTP_NOT_FOUND)
+         else if (code == HttpStatus.SC_NOT_FOUND)
          {
             EntityUtils.consume(httpResponse.getEntity());
             throw new IncomingFileTransferException(NLS.bind("File not found: {0}", urlString), code, responseHeaders); //$NON-NLS-1$
          }
-         else if (code == HttpURLConnection.HTTP_UNAUTHORIZED)
+         else if (code == HttpStatus.SC_UNAUTHORIZED)
          {
             EntityUtils.consume(httpResponse.getEntity());
             throw new IncomingFileTransferException(Messages.HttpClientRetrieveFileTransfer_Unauthorized, code, responseHeaders);
          }
-         else if (code == HttpURLConnection.HTTP_FORBIDDEN)
+         else if (code == HttpStatus.SC_FORBIDDEN)
          {
             EntityUtils.consume(httpResponse.getEntity());
             throw new IncomingFileTransferException("Forbidden", code, responseHeaders); //$NON-NLS-1$
          }
-         else if (code == HttpURLConnection.HTTP_PROXY_AUTH)
+         else if (code == HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED)
          {
             EntityUtils.consume(httpResponse.getEntity());
             throw new IncomingFileTransferException(Messages.HttpClientRetrieveFileTransfer_Proxy_Auth_Required, code, responseHeaders);
@@ -1086,42 +1109,50 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
    protected void getResumeResponseHeaderValues() throws IOException
    {
       if (getResponseCode() != HttpURLConnection.HTTP_PARTIAL)
+      {
          throw new IOException();
+      }
       if (lastModifiedTime != getLastModifiedTimeFromHeader())
+      {
          throw new IOException(Messages.HttpClientRetrieveFileTransfer_EXCEPTION_FILE_MODIFIED_SINCE_LAST_ACCESS);
+      }
    }
 
    /*
     * (non-Javadoc)
     *
-    * @see org.eclipse.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#getAdapter(java.lang.Class)
+    * @see de.yatta.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#getAdapter(java.lang.Class)
     */
-   public Object getAdapter(Class adapter)
+   @Override
+   public Object getAdapter(@SuppressWarnings("rawtypes") Class adapter)
    {
       if (adapter == null)
+      {
          return null;
+      }
       if (adapter.equals(IFileTransferPausable.class) && isHTTP11())
+      {
          return this;
-      if (adapter.equals(ISocketEventSource.class))
-         return this.socketEventSource;
+      }
       return super.getAdapter(adapter);
    }
 
    /* (non-Javadoc)
-    * @see org.eclipse.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#setupProxy(org.eclipse.ecf.core.util.Proxy)
+    * @see de.yatta.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#setupProxy(org.eclipse.ecf.core.util.Proxy)
     */
+   @Override
    protected void setupProxy(Proxy proxy)
    {
       Trace.entering(Activator.PLUGIN_ID, DebugOptions.METHODS_ENTERING, HttpClientRetrieveFileTransfer.class, "setupProxy " + proxy); //$NON-NLS-1$
       if (proxy.getType().equals(Proxy.Type.HTTP))
       {
          final ProxyAddress address = proxy.getAddress();
-         ConnRouteParams.setDefaultProxy(httpClient.getParams(), new HttpHost(address.getHostName(), address.getPort()));
-         //			getHostConfiguration().setProxy(address.getHostName(), address.getPort());
+         getRequestConfigBuilder().setProxy(new HttpHost(address.getHostName(), address.getPort()));
       }
       else if (proxy.getType().equals(Proxy.Type.SOCKS))
       {
          Trace.trace(Activator.PLUGIN_ID, "retrieve socksproxy=" + proxy.getAddress()); //$NON-NLS-1$
+         getRequestConfigBuilder().setProxy(null);
          proxyHelper.setupProxy(proxy);
       }
    }
@@ -1129,91 +1160,48 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
    /**
     * This method will clear out the proxy information (so that if this is
     * reused for a request without a proxy, it will work correctly).
-    * 
+    *
     * @since 5.0
     */
    protected void clearProxy()
    {
       Trace.entering(Activator.PLUGIN_ID, DebugOptions.METHODS_ENTERING, HttpClientRetrieveFileTransfer.class, "clearProxy()"); //$NON-NLS-1$
-      ConnRouteParams.setDefaultProxy(httpClient.getParams(), null);
-   }
-
-   /**
-    * @param p proxy to create NTCredentials for
-    * @return NTCredentials new ntlm credentials given proxy
-    * @since 5.0
-    */
-   public static NTCredentials createNTLMCredentials(Proxy p)
-   {
-      if (p == null)
+      if (requestConfigBuilder != null)
       {
-         return null;
+         requestConfigBuilder.setProxy(null);
       }
-      String un = getNTLMUserName(p);
-      String domain = getNTLMDomainName(p);
-      if (un == null || domain == null)
-         return null;
-
-      String workstation = null;
-      try
-      {
-         workstation = InetAddress.getLocalHost().getHostName();
-      }
-      catch (UnknownHostException e)
-      {
-         Trace.catching(Activator.PLUGIN_ID, DebugOptions.EXCEPTIONS_CATCHING, HttpClientRetrieveFileTransfer.class, "createNTLMCredentials", e); //$NON-NLS-1$
-      }
-
-      return new NTCredentials(un, p.getPassword(), workstation, domain);
-   }
-
-   protected static String getNTLMDomainName(Proxy p)
-   {
-      String domainUsername = p.getUsername();
-      if (domainUsername == null)
-         return null;
-      int slashloc = domainUsername.indexOf('\\');
-      if (slashloc == -1)
-         return null;
-      return domainUsername.substring(0, slashloc);
-   }
-
-   protected static String getNTLMUserName(Proxy p)
-   {
-      String domainUsername = p.getUsername();
-      if (domainUsername == null)
-         return null;
-      int slashloc = domainUsername.indexOf('\\');
-      if (slashloc == -1)
-         return null;
-      return domainUsername.substring(slashloc + 1);
    }
 
    protected void fireConnectStartEvent()
    {
-      Trace.entering(Activator.PLUGIN_ID, DebugOptions.METHODS_ENTERING, this.getClass(), "fireConnectStartEvent"); //$NON-NLS-1$ 
+      Trace.entering(Activator.PLUGIN_ID, DebugOptions.METHODS_ENTERING, this.getClass(), "fireConnectStartEvent"); //$NON-NLS-1$
       // TODO: should the following be in super.fireReceiveStartEvent();
       listener.handleTransferEvent(new IFileTransferConnectStartEvent() {
+         @Override
          public IFileID getFileID()
          {
             return remoteFileID;
          }
 
+         @Override
          public void cancel()
          {
             HttpClientRetrieveFileTransfer.this.cancel();
          }
 
+         @Override
          public FileTransferJob prepareConnectJob(FileTransferJob j)
          {
             return HttpClientRetrieveFileTransfer.this.prepareConnectJob(j);
          }
 
+         @Override
          public void connectUsingJob(FileTransferJob j)
          {
             HttpClientRetrieveFileTransfer.this.connectUsingJob(j);
          }
 
+         @Override
          public String toString()
          {
             final StringBuffer sb = new StringBuffer("IFileTransferConnectStartEvent["); //$NON-NLS-1$
@@ -1222,9 +1210,10 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
             return sb.toString();
          }
 
-         public Object getAdapter(Class adapter)
+         @Override
+         public <T> T getAdapter(Class<T> adapter)
          {
-            return HttpClientRetrieveFileTransfer.this.getAdapter(adapter);
+            return adapter.cast(HttpClientRetrieveFileTransfer.this.getAdapter(adapter));
          }
       });
    }
@@ -1253,6 +1242,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
    }
 
    private IFileTransferRunnable fileConnectRunnable = new IFileTransferRunnable() {
+      @Override
       public IStatus performFileTransfer(IProgressMonitor monitor)
       {
          return performConnect(monitor);
@@ -1261,15 +1251,16 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
 
    private IStatus performConnect(IProgressMonitor monitor)
    {
-      // there might be more ticks in the future perhaps for 
+      // there might be more ticks in the future perhaps for
       // connect socket, certificate validation, send request, authenticate,
       int ticks = 1;
       monitor.beginTask(getRemoteFileURL().toString() + Messages.HttpClientRetrieveFileTransfer_CONNECTING_TASK_NAME, ticks);
       try
       {
          if (monitor.isCanceled())
+         {
             throw newUserCancelledException();
-         httpContext = new BasicHttpContext();
+         }
          httpResponse = httpClient.execute(getMethod, httpContext);
          responseCode = httpResponse.getStatusLine().getStatusCode();
          Trace.trace(Activator.PLUGIN_ID, "retrieve resp=" + responseCode); //$NON-NLS-1$
@@ -1290,33 +1281,21 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
 
    }
 
-   protected void finalize() throws Throwable
-   {
-      try
-      {
-         if (this.httpClient != null)
-         {
-            this.httpClient.getConnectionManager().shutdown();
-         }
-      }
-      finally
-      {
-         super.finalize();
-      }
-   }
-
+   @Override
    protected void fireReceiveResumedEvent()
    {
       Trace.entering(Activator.PLUGIN_ID, DebugOptions.METHODS_ENTERING, this.getClass(), "fireReceiveResumedEvent len=" + fileLength + ";rcvd=" + bytesReceived); //$NON-NLS-1$ //$NON-NLS-2$
       super.fireReceiveResumedEvent();
    }
 
+   @Override
    protected void fireTransferReceiveDataEvent()
    {
       Trace.entering(Activator.PLUGIN_ID, DebugOptions.METHODS_ENTERING, this.getClass(), "fireTransferReceiveDataEvent len=" + fileLength + ";rcvd=" + bytesReceived); //$NON-NLS-1$ //$NON-NLS-2$
       super.fireTransferReceiveDataEvent();
    }
 
+   @Override
    protected void fireTransferReceiveDoneEvent()
    {
       Trace.entering(Activator.PLUGIN_ID, DebugOptions.METHODS_ENTERING, this.getClass(), "fireTransferReceiveDoneEvent len=" + fileLength + ";rcvd=" + bytesReceived); //$NON-NLS-1$ //$NON-NLS-2$
@@ -1324,6 +1303,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
       super.fireTransferReceiveDoneEvent();
    }
 
+   @Override
    protected void fireTransferReceivePausedEvent()
    {
       Trace.entering(Activator.PLUGIN_ID, DebugOptions.METHODS_ENTERING, this.getClass(), "fireTransferReceivePausedEvent len=" + fileLength + ";rcvd=" + bytesReceived); //$NON-NLS-1$ //$NON-NLS-2$

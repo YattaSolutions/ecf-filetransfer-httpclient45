@@ -16,23 +16,21 @@ package de.yatta.ecf.provider.filetransfer.httpclient45;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+
 import org.apache.http.Header;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.auth.params.AuthPNames;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpHead;
-import org.apache.http.client.params.AuthPolicy;
-import org.apache.http.conn.params.ConnRouteParams;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.cookie.DateUtils;
-import org.apache.http.params.CoreConnectionPNames;
-import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.client.utils.DateUtils;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.protocol.HttpContext;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.ecf.core.security.Callback;
@@ -49,18 +47,21 @@ import org.eclipse.ecf.filetransfer.IRemoteFile;
 import org.eclipse.ecf.filetransfer.IRemoteFileSystemListener;
 import org.eclipse.ecf.filetransfer.IRemoteFileSystemRequest;
 import org.eclipse.ecf.filetransfer.identity.IFileID;
+import org.eclipse.ecf.internal.provider.filetransfer.DebugOptions;
 import org.eclipse.ecf.provider.filetransfer.browse.AbstractFileSystemBrowser;
 import org.eclipse.ecf.provider.filetransfer.browse.URLRemoteFile;
-import org.eclipse.ecf.provider.filetransfer.events.socket.SocketEventSource;
 import org.eclipse.ecf.provider.filetransfer.util.JREProxyHelper;
 import org.eclipse.ecf.provider.filetransfer.util.ProxySetupHelper;
 import org.eclipse.osgi.util.NLS;
 
 import de.yatta.ecf.internal.provider.filetransfer.httpclient45.Activator;
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.ConnectingSocketMonitor;
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.DebugOptions;
+import de.yatta.ecf.internal.provider.filetransfer.httpclient45.DefaultNTLMProxyHandler;
+import de.yatta.ecf.internal.provider.filetransfer.httpclient45.ECFHttpClientFactory;
 import de.yatta.ecf.internal.provider.filetransfer.httpclient45.HttpClientProxyCredentialProvider;
+import de.yatta.ecf.internal.provider.filetransfer.httpclient45.IHttpClientFactory;
+import de.yatta.ecf.internal.provider.filetransfer.httpclient45.INTLMProxyHandler;
 import de.yatta.ecf.internal.provider.filetransfer.httpclient45.Messages;
+import de.yatta.ecf.internal.provider.filetransfer.httpclient45.NTLMProxyDetector;
 
 /**
  *
@@ -70,40 +71,39 @@ public class HttpClientFileSystemBrowser extends AbstractFileSystemBrowser
 
    private static final String CONTENT_LENGTH_HEADER = "Content-Length"; //$NON-NLS-1$
 
-   // changing to 2 minutes (120000) as per bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=266246
-   // 10/26/2009:  Added being able to set with system property with name de.yatta.ecf.provider.filetransfer.httpclient45.browse.connectTimeout
-   // for https://bugs.eclipse.org/bugs/show_bug.cgi?id=292995
    protected static final int DEFAULT_CONNECTION_TIMEOUT = HttpClientOptions.BROWSE_DEFAULT_CONNECTION_TIMEOUT;
 
    private static final String USERNAME_PREFIX = "Username:"; //$NON-NLS-1$
 
    private JREProxyHelper proxyHelper = null;
 
-   private ConnectingSocketMonitor connectingSockets;
-
    protected String username = null;
 
    protected String password = null;
 
-   protected DefaultHttpClient httpClient = null;
+   protected CloseableHttpClient httpClient = null;
+
+   private RequestConfig.Builder requestConfigBuilder;
+
+   private HttpClientProxyCredentialProvider credentialsProvider;
 
    protected volatile HttpHead headMethod;
 
    /**
     * This is the response returned by {@link HttpClient} when it executes
     * {@link #headMethod}.
-    * 
+    *
     * @since 5.0
     */
-   protected volatile HttpResponse httpResponse;
+   protected volatile CloseableHttpResponse httpResponse;
 
    /**
     * This is the context used to retain information about the request that
     * the {@link HttpClient} gathers during the request.
-    * 
+    *
     * @since 5.0
     */
-   protected volatile HttpContext httpContext;
+   protected volatile HttpClientContext httpContext;
 
    /**
     * @param httpClient http client
@@ -114,90 +114,70 @@ public class HttpClientFileSystemBrowser extends AbstractFileSystemBrowser
     * @param proxy proxy
     * @since 5.0
     */
-   public HttpClientFileSystemBrowser(DefaultHttpClient httpClient, IFileID directoryOrFileID, IRemoteFileSystemListener listener, URL directoryOrFileURL, IConnectContext connectContext, Proxy proxy)
+   public HttpClientFileSystemBrowser(CloseableHttpClient httpClient, IFileID directoryOrFileID, IRemoteFileSystemListener listener, URL directoryOrFileURL, IConnectContext connectContext, Proxy proxy)
    {
       super(directoryOrFileID, listener, directoryOrFileURL, connectContext, proxy);
       Assert.isNotNull(httpClient);
       this.httpClient = httpClient;
-      this.httpClient.setCredentialsProvider(new HttpClientProxyCredentialProvider() {
 
+      credentialsProvider = new HttpClientProxyCredentialProvider() {
+
+         @Override
          protected Proxy getECFProxy()
          {
             return getProxy();
          }
 
-         protected Credentials getNTLMCredentials(Proxy lp)
+         @Override
+         protected boolean allowNTLMAuthentication()
          {
-            if (hasForceNTLMProxyOption())
-               return HttpClientRetrieveFileTransfer.createNTLMCredentials(lp);
-            return null;
+            DefaultNTLMProxyHandler.setSeenNTLM();
+            return ECFHttpClientFactory.getNTLMProxyHandler(httpContext).allowNTLMAuthentication(null);
          }
 
-      });
+      };
+      IHttpClientFactory httpClientFactory = Activator.getDefault().getHttpClientFactory();
+      CredentialsProvider contextCredentialsProvider = ECFHttpClientFactory.modifyCredentialsProvider(credentialsProvider);
+      httpContext = httpClientFactory.newClientContext();
+      httpContext.setCredentialsProvider(contextCredentialsProvider);
       this.proxyHelper = new JREProxyHelper();
-      this.connectingSockets = new ConnectingSocketMonitor(1);
 
-      prepareAuth();
-   }
-
-   private void prepareAuth()
-   {
-      // SPNEGO is not supported, so remove it from the list
-      List authpref = new ArrayList(3);
-      authpref.add(AuthPolicy.NTLM);
-      authpref.add(AuthPolicy.DIGEST);
-      authpref.add(AuthPolicy.BASIC);
-
-      httpClient.getParams().setParameter(AuthPNames.PROXY_AUTH_PREF, authpref);
-      httpClient.getParams().setParameter(AuthPNames.TARGET_AUTH_PREF, authpref);
    }
 
    class HttpClientRemoteFileSystemRequest extends RemoteFileSystemRequest
    {
-      protected SocketEventSource socketEventSource;
-
       HttpClientRemoteFileSystemRequest()
       {
-         this.socketEventSource = new SocketEventSource() {
-            public Object getAdapter(Class adapter)
-            {
-               if (adapter == null)
-               {
-                  return null;
-               }
-               if (adapter.isInstance(this))
-               {
-                  return this;
-               }
-               if (adapter.isInstance(HttpClientRemoteFileSystemRequest.this))
-               {
-                  return HttpClientRemoteFileSystemRequest.this;
-               }
-               return null;
-            }
-         };
       }
 
-      public Object getAdapter(Class adapter)
+      @Override
+      public <T> T getAdapter(Class<T> adapter)
       {
          if (adapter == null)
          {
             return null;
          }
-         return socketEventSource.getAdapter(adapter);
+         if (adapter.isInstance(this))
+         {
+            return adapter.cast(this);
+         }
+         return null;
       }
 
+      @Override
       public void cancel()
       {
          HttpClientFileSystemBrowser.this.cancel();
       }
    }
 
+   @Override
    protected IRemoteFileSystemRequest createRemoteFileSystemRequest()
    {
       return new HttpClientRemoteFileSystemRequest();
    }
 
+   @Override
    protected void cancel()
    {
       if (isCanceled())
@@ -213,19 +193,9 @@ public class HttpClientFileSystemBrowser extends AbstractFileSystemBrowser
             headMethod.abort();
          }
       }
-      if (connectingSockets != null)
-      {
-         // Change for preventing CME from bug
-         // https://bugs.eclipse.org/bugs/show_bug.cgi?id=430704
-         connectingSockets.closeSockets();
-      }
    }
 
-   protected boolean hasForceNTLMProxyOption()
-   {
-      return (System.getProperties().getProperty(HttpClientOptions.FORCE_NTLM_PROP) != null);
-   }
-
+   @Override
    protected void setupProxies()
    {
       // If it's been set directly (via ECF API) then this overrides platform settings
@@ -249,66 +219,74 @@ public class HttpClientFileSystemBrowser extends AbstractFileSystemBrowser
          }
       }
       if (proxy != null)
+      {
          setupProxy(proxy);
+      }
    }
 
+   @Override
    protected void cleanUp()
    {
       clearProxy();
+      headMethod = null;
+      requestConfigBuilder = null;
 
       super.cleanUp();
    }
 
    /* (non-Javadoc)
-    * @see org.eclipse.ecf.provider.filetransfer.browse.AbstractFileSystemBrowser#runRequest()
+    * @see de.yatta.ecf.provider.filetransfer.browse.AbstractFileSystemBrowser#runRequest()
     */
+   @Override
    protected void runRequest() throws Exception
    {
       Trace.entering(Activator.PLUGIN_ID, DebugOptions.METHODS_ENTERING, this.getClass(), "runRequest"); //$NON-NLS-1$
       setupProxies();
-      // set timeout
-      httpClient.getParams().setIntParameter(CoreConnectionPNames.SO_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT);
-      httpClient.getParams().setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT);
 
       String urlString = directoryOrFile.toString();
       // setup authentication
       setupAuthentication(urlString);
 
       headMethod = new HttpHead(urlString);
+      requestConfigBuilder = Activator.getDefault().getHttpClientFactory().newRequestConfig(httpContext, null);
+      requestConfigBuilder.setSocketTimeout(DEFAULT_CONNECTION_TIMEOUT).setConnectTimeout(DEFAULT_CONNECTION_TIMEOUT);
+
       int maxAge = Integer.getInteger("org.eclipse.ecf.http.cache.max-age", 0).intValue(); //$NON-NLS-1$
       // set max-age for cache control to 0 for bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=249990
       // fix the fix for bug 249990 with bug 410813
       if (maxAge == 0)
       {
-         headMethod.addHeader("Cache-Control", "max-age=0"); //$NON-NLS-1$//$NON-NLS-2$
+         headMethod.addHeader(HttpHeaders.CACHE_CONTROL, "max-age=0"); //$NON-NLS-1$
       }
       else if (maxAge > 0)
       {
-         headMethod.addHeader("Cache-Control", "max-age=" + maxAge); //$NON-NLS-1$//$NON-NLS-2$
+         headMethod.addHeader(HttpHeaders.CACHE_CONTROL, "max-age=" + maxAge); //$NON-NLS-1$
       }
 
       long lastModified = 0;
       long fileLength = -1;
-      connectingSockets.clear();
+
       int code = -1;
       try
       {
          Trace.trace(Activator.PLUGIN_ID, "browse=" + urlString); //$NON-NLS-1$
 
-         httpContext = new BasicHttpContext();
          httpResponse = httpClient.execute(headMethod, httpContext);
          code = httpResponse.getStatusLine().getStatusCode();
 
          Trace.trace(Activator.PLUGIN_ID, "browse resp=" + code); //$NON-NLS-1$
 
-         // Check for NTLM proxy in response headers 
+         // Check for NTLM proxy in response headers
          // This check is to deal with bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=252002
          boolean ntlmProxyFound = NTLMProxyDetector.detectNTLMProxy(httpContext);
-         if (ntlmProxyFound && !hasForceNTLMProxyOption())
-            throw new BrowseFileTransferException("HttpClient Provider is not configured to support NTLM proxy authentication.", HttpClientOptions.NTLM_PROXY_RESPONSE_CODE); //$NON-NLS-1$
-
+         if (ntlmProxyFound)
+         {
+            getNTLMProxyHandler(httpContext).handleNTLMProxy(getProxy(), code);
+         }
          if (NTLMProxyDetector.detectSPNEGOProxy(httpContext))
-            throw new BrowseFileTransferException("HttpClient Provider does not support the use of SPNEGO proxy authentication."); //$NON-NLS-1$
+         {
+            getNTLMProxyHandler(httpContext).handleSPNEGOProxy(getProxy(), code);
+         }
 
          if (code == HttpURLConnection.HTTP_OK)
          {
@@ -349,13 +327,32 @@ public class HttpClientFileSystemBrowser extends AbstractFileSystemBrowser
          BrowseFileTransferException ex = (BrowseFileTransferException)((e instanceof BrowseFileTransferException) ? e : new BrowseFileTransferException(NLS.bind(Messages.HttpClientRetrieveFileTransfer_EXCEPTION_COULD_NOT_CONNECT, urlString), e, code));
          throw ex;
       }
+      finally
+      {
+         if (httpResponse != null)
+         {
+            httpResponse.close();
+         }
+      }
+   }
+
+   private INTLMProxyHandler getNTLMProxyHandler(HttpContext httpContext)
+   {
+      Object value = httpContext.getAttribute(ECFHttpClientFactory.NTLM_PROXY_HANDLER_ATTR);
+      if (value instanceof INTLMProxyHandler)
+      {
+         return (INTLMProxyHandler)value;
+      }
+      return Activator.getDefault().getNTLMProxyHandler();
    }
 
    private long getLastModifiedTimeFromHeader() throws IOException
    {
-      Header lastModifiedHeader = httpResponse.getLastHeader("Last-Modified"); //$NON-NLS-1$
+      Header lastModifiedHeader = httpResponse.getLastHeader(HttpHeaders.LAST_MODIFIED);
       if (lastModifiedHeader == null)
+      {
          return 0L;
+      }
       String lastModifiedString = lastModifiedHeader.getValue();
       long lastModified = 0;
       if (lastModifiedString != null)
@@ -379,7 +376,7 @@ public class HttpClientFileSystemBrowser extends AbstractFileSystemBrowser
 
    /**
     * Retrieves the credentials for requesting the file.
-    * 
+    *
     * @return the {@link Credentials} necessary to retrieve the file
     * @throws UnsupportedCallbackException if the callback fails
     * @throws IOException if IO fails
@@ -388,10 +385,14 @@ public class HttpClientFileSystemBrowser extends AbstractFileSystemBrowser
    protected Credentials getFileRequestCredentials() throws UnsupportedCallbackException, IOException
    {
       if (connectContext == null)
+      {
          return null;
+      }
       final CallbackHandler callbackHandler = connectContext.getCallbackHandler();
       if (callbackHandler == null)
+      {
          return null;
+      }
       final NameCallback usernameCallback = new NameCallback(USERNAME_PREFIX);
       final ObjectCallback passwordCallback = new ObjectCallback();
       callbackHandler.handle(new Callback[] { usernameCallback, passwordCallback });
@@ -412,20 +413,22 @@ public class HttpClientFileSystemBrowser extends AbstractFileSystemBrowser
       {
          final AuthScope authScope = new AuthScope(HttpClientRetrieveFileTransfer.getHostFromURL(urlString), HttpClientRetrieveFileTransfer.getPortFromURL(urlString), AuthScope.ANY_REALM);
          Trace.trace(Activator.PLUGIN_ID, "browse credentials=" + credentials); //$NON-NLS-1$
-         httpClient.getCredentialsProvider().setCredentials(authScope, credentials);
+         credentialsProvider.setCredentials(authScope, credentials);
       }
    }
 
+   @Override
    protected void setupProxy(Proxy proxy)
    {
       if (proxy.getType().equals(Proxy.Type.HTTP))
       {
          final ProxyAddress address = proxy.getAddress();
-         ConnRouteParams.setDefaultProxy(httpClient.getParams(), new HttpHost(address.getHostName(), address.getPort()));
+         requestConfigBuilder.setProxy(new HttpHost(address.getHostName(), address.getPort()));
       }
       else if (proxy.getType().equals(Proxy.Type.SOCKS))
       {
-         Trace.trace(Activator.PLUGIN_ID, "brows socksproxy=" + proxy.getAddress()); //$NON-NLS-1$
+         Trace.trace(Activator.PLUGIN_ID, "browse socksproxy=" + proxy.getAddress()); //$NON-NLS-1$
+         requestConfigBuilder.setProxy(null);
          proxyHelper.setupProxy(proxy);
       }
    }
@@ -433,12 +436,15 @@ public class HttpClientFileSystemBrowser extends AbstractFileSystemBrowser
    /**
     * This method will clear out the proxy information (so that if this is
     * reused for a request without a proxy, it will work correctly).
-    * 
+    *
     * @since 5.0
     */
    protected void clearProxy()
    {
-      ConnRouteParams.setDefaultProxy(httpClient.getParams(), null);
+      if (requestConfigBuilder != null)
+      {
+         requestConfigBuilder.setProxy(null);
+      }
    }
 
 }

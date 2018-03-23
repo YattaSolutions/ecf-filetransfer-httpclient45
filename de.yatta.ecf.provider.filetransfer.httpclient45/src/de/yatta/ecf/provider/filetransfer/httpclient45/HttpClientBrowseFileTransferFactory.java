@@ -13,6 +13,7 @@ package de.yatta.ecf.provider.filetransfer.httpclient45;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.ecf.core.identity.IDFactory;
 import org.eclipse.ecf.core.identity.Namespace;
@@ -27,9 +28,12 @@ import org.eclipse.ecf.filetransfer.service.IRemoteFileSystemBrowserFactory;
 import org.eclipse.ecf.provider.filetransfer.identity.FileTransferNamespace;
 import org.eclipse.osgi.util.NLS;
 
+import de.yatta.ecf.internal.provider.filetransfer.httpclient45.Activator;
+
 public class HttpClientBrowseFileTransferFactory implements IRemoteFileSystemBrowserFactory
 {
 
+   @Override
    public IRemoteFileSystemBrowser newInstance()
    {
       return new IRemoteFileSystemBrowser() {
@@ -37,11 +41,13 @@ public class HttpClientBrowseFileTransferFactory implements IRemoteFileSystemBro
          private Proxy proxy;
          private IConnectContext connectContext;
 
+         @Override
          public Namespace getBrowseNamespace()
          {
             return IDFactory.getDefault().getNamespaceByName(FileTransferNamespace.PROTOCOL);
          }
 
+         @Override
          public IRemoteFileSystemRequest sendBrowseRequest(IFileID directoryOrFileId, IRemoteFileSystemListener listener) throws RemoteFileSystemException
          {
             Assert.isNotNull(directoryOrFileId);
@@ -56,21 +62,24 @@ public class HttpClientBrowseFileTransferFactory implements IRemoteFileSystemBro
                throw new RemoteFileSystemException(NLS.bind("Exception creating URL for {0}", directoryOrFileId)); //$NON-NLS-1$
             }
 
-            HttpClientFileSystemBrowser browser = new HttpClientFileSystemBrowser(new SNIAwareHttpClient(), directoryOrFileId, listener, url, connectContext, proxy);
+            HttpClientFileSystemBrowser browser = new HttpClientFileSystemBrowser(Activator.getDefault().getBrowseHttpClient(), directoryOrFileId, listener, url, connectContext, proxy);
             return browser.sendBrowseRequest();
          }
 
+         @Override
          public void setConnectContextForAuthentication(IConnectContext connectContext)
          {
             this.connectContext = connectContext;
          }
 
+         @Override
          public void setProxy(Proxy proxy)
          {
             this.proxy = proxy;
          }
 
-         public Object getAdapter(Class adapter)
+         @Override
+         public <T> T getAdapter(Class<T> adapter)
          {
             return null;
          }

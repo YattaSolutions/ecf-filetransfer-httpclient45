@@ -11,27 +11,17 @@
  *****************************************************************************/
 package de.yatta.ecf.provider.filetransfer.httpclient45;
 
-import org.apache.http.conn.scheme.PlainSocketFactory;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.SSLContexts;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.impl.conn.SingleClientConnManager;
 import org.eclipse.ecf.filetransfer.service.IRetrieveFileTransfer;
 import org.eclipse.ecf.filetransfer.service.IRetrieveFileTransferFactory;
+
+import de.yatta.ecf.internal.provider.filetransfer.httpclient45.Activator;
 
 public class HttpClientRetrieveFileTransferFactory implements IRetrieveFileTransferFactory
 {
 
+   @Override
    public IRetrieveFileTransfer newInstance()
    {
-
-      SSLSocketFactory factory = new SSLSocketFactory(SSLContexts.createSystemDefault(), SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
-
-      final SchemeRegistry registry = new SchemeRegistry();
-      registry.register(new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
-      registry.register(new Scheme("https", 443, factory));
-
-      return new HttpClientRetrieveFileTransfer(new SNIAwareHttpClient(new SingleClientConnManager(registry)));
+      return new HttpClientRetrieveFileTransfer(Activator.getDefault().getRetrieveHttpClient());
    }
 }

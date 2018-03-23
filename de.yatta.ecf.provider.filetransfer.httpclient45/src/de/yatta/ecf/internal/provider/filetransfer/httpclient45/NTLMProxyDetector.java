@@ -8,11 +8,11 @@
 *   EclipseSource - initial API and implementation
 *   Thomas Joiner - changed to work with HttpClient 4.1 and added SPNEGO detection
 ******************************************************************************/
-package de.yatta.ecf.provider.filetransfer.httpclient45;
+package de.yatta.ecf.internal.provider.filetransfer.httpclient45;
 
 import org.apache.http.auth.AuthScheme;
 import org.apache.http.auth.AuthState;
-import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.protocol.HttpContext;
 
 public class NTLMProxyDetector
@@ -38,16 +38,24 @@ public class NTLMProxyDetector
    private static boolean isProxyType(HttpContext context, String scheme)
    {
       if (context == null)
+      {
          return false;
-      AuthState authState = (AuthState)context.getAttribute(ClientContext.PROXY_AUTH_STATE);
+      }
+      AuthState authState = (AuthState)context.getAttribute(HttpClientContext.PROXY_AUTH_STATE);
       if (authState == null)
+      {
          return false;
+      }
       AuthScheme authScheme = authState.getAuthScheme();
       if (authScheme == null)
+      {
          return false;
+      }
       String schemeName = authScheme.getSchemeName();
       if (schemeName == null)
+      {
          return false;
+      }
       return schemeName.equalsIgnoreCase(scheme);
    }
 
