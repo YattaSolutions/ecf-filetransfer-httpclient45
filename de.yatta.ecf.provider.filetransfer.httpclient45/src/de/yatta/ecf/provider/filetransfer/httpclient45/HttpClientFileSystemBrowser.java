@@ -241,15 +241,19 @@ public class HttpClientFileSystemBrowser extends AbstractFileSystemBrowser
    protected void runRequest() throws Exception
    {
       Trace.entering(Activator.PLUGIN_ID, DebugOptions.METHODS_ENTERING, this.getClass(), "runRequest"); //$NON-NLS-1$
-      setupProxies();
 
       String urlString = directoryOrFile.toString();
+
+      requestConfigBuilder = Activator.getDefault().getHttpClientFactory().newRequestConfig(httpContext, null);
+      requestConfigBuilder.setSocketTimeout(DEFAULT_CONNECTION_TIMEOUT).setConnectTimeout(DEFAULT_CONNECTION_TIMEOUT);
+
+      setupProxies();
+
       // setup authentication
       setupAuthentication(urlString);
 
       headMethod = new HttpHead(urlString);
-      requestConfigBuilder = Activator.getDefault().getHttpClientFactory().newRequestConfig(httpContext, null);
-      requestConfigBuilder.setSocketTimeout(DEFAULT_CONNECTION_TIMEOUT).setConnectTimeout(DEFAULT_CONNECTION_TIMEOUT);
+      headMethod.setConfig(requestConfigBuilder.build());
 
       int maxAge = Integer.getInteger("org.eclipse.ecf.http.cache.max-age", 0).intValue(); //$NON-NLS-1$
       // set max-age for cache control to 0 for bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=249990
