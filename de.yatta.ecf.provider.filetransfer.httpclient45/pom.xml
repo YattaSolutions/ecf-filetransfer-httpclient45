@@ -3,9 +3,9 @@
    <modelVersion>4.0.0</modelVersion>
    <parent>
       <groupId>de.yatta.eclipse.launcher</groupId>
-      <artifactId>de.yatta.eclipse.launcher-eclipse-plugin</artifactId>
-      <version>1.3.35-SNAPSHOT</version>
-      <relativePath>../de.yatta.eclipse.launcher-parent/eclipse-plugin/pom.xml</relativePath>
+      <artifactId>de.yatta.eclipse.launcher-epl-plugin</artifactId>
+      <version>1.3.40-SNAPSHOT</version>
+      <relativePath>../de.yatta.eclipse.launcher-parent/epl-plugin/pom.xml</relativePath>
    </parent>
    <artifactId>de.yatta.ecf.provider.filetransfer.httpclient45</artifactId>
    <packaging>eclipse-plugin</packaging>

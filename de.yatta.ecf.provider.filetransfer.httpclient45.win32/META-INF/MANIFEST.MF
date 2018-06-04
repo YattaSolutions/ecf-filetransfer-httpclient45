@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Win32
 Bundle-Vendor: Yatta Solutions GmbH
 Bundle-SymbolicName: de.yatta.ecf.provider.filetransfer.httpclient45.win32;singleton:=true
-Bundle-Version: 1.3.35.qualifier
+Bundle-Version: 1.3.40.qualifier
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ClassPath: .

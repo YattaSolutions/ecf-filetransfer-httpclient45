@@ -6,7 +6,7 @@
    <parent>
       <groupId>de.yatta.eclipse.launcher.features</groupId>
       <artifactId>de.yatta.eclipse.launcher-eclipse-feature</artifactId>
-      <version>1.3.35-SNAPSHOT</version>
+      <version>1.3.40-SNAPSHOT</version>
       <relativePath>../de.yatta.eclipse.launcher-parent/eclipse-feature/pom.xml</relativePath>
    </parent>
    <name>Yatta Profiles Shared EPL License Feature</name>
