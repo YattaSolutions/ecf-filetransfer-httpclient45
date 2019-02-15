@@ -361,7 +361,7 @@ public class HttpClientProxyCredentialProvider extends BasicCredentialsProvider
       {
          return userName;
       }
-      if (userName.length() > pos + 1 && userName.charAt(pos + 1) == SLASH)
+      if (userName.length() > pos + 1 && (userName.charAt(pos + 1) == SLASH || userName.charAt(pos + 1) == BACKSLASH))
       {
          pos++;
       }
