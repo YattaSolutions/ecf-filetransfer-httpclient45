@@ -4,4 +4,4 @@ This bundle implements a filetransfer provider for the [Eclipse Communication Fr
 
 The implementation is based on the existing HttpClient 4 Filetransfer Provider available [here](https://git.eclipse.org/c/ecf/org.eclipse.ecf.git/tree/providers/bundles/org.eclipse.ecf.provider.filetransfer.httpclient4).
 
-All content is licensed under the [Eclipse Public License v1.0](./about.html).
+All content is licensed under the [Eclipse Public License v1.0](http://www.eclipse.org/org/documents/epl-v10.php).
