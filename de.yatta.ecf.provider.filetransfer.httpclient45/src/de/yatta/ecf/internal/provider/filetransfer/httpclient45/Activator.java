@@ -154,7 +154,11 @@ public class Activator implements BundleActivator
    private void applyDebugOptions(BundleContext ctxt)
    {
       ServiceReference<org.eclipse.osgi.service.debug.DebugOptions> debugRef = ctxt.getServiceReference(org.eclipse.osgi.service.debug.DebugOptions.class);
-      org.eclipse.osgi.service.debug.DebugOptions debugOptions = ctxt.getService(debugRef);
+      org.eclipse.osgi.service.debug.DebugOptions debugOptions = debugRef == null ? null : ctxt.getService(debugRef);
+      if (debugOptions == null)
+      {
+         return;
+      }
       try
       {
          if (!debugOptions.isDebugEnabled())
@@ -343,6 +347,10 @@ public class Activator implements BundleActivator
          IHttpClientModifier modifier = this.context.getService(serviceReference);
          try
          {
+            if (modifier == null)
+            {
+               continue;
+            }
             T newValue = modifierRunner.run(modifier, modifiedValue);
             if (newValue != null)
             {
