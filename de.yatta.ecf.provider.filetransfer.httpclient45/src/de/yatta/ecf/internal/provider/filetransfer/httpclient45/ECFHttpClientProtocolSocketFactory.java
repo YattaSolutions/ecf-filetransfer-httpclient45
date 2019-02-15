@@ -9,7 +9,7 @@
  *     IBM Corporation - initial API and implementation
  *     Thomas Joiner - HttpClient 4 implementation
  *******************************************************************************/
-package org.eclipse.ecf.internal.provider.filetransfer.httpclient4;
+package de.yatta.ecf.internal.provider.filetransfer.httpclient45;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

@@ -9,7 +9,7 @@
  *    Composent, Inc. - initial API and implementation
  *    Thomas Joiner - HttpClient 4 implementation
  *****************************************************************************/
-package org.eclipse.ecf.provider.filetransfer.httpclient4;
+package de.yatta.ecf.provider.filetransfer.httpclient45;
 
 import java.net.MalformedURLException;
 import java.net.URL;

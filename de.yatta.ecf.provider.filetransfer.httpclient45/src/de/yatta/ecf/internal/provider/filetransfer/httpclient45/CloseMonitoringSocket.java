@@ -9,7 +9,7 @@
 *   Thomas Joiner - extracted implementation from the Socket factories
 ******************************************************************************/
 
-package org.eclipse.ecf.internal.provider.filetransfer.httpclient4;
+package de.yatta.ecf.internal.provider.filetransfer.httpclient45;
 
 import java.io.IOException;
 import java.net.Socket;

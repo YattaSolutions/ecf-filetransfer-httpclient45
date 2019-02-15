@@ -8,7 +8,7 @@
  * Contributors:
  *    Chris Aniszczyk - initial API and implementation
  *****************************************************************************/
-package org.eclipse.ecf.internal.provider.filetransfer.httpclient4;
+package de.yatta.ecf.internal.provider.filetransfer.httpclient45;
 
 import javax.net.ssl.SSLSocketFactory;
 import org.eclipse.core.runtime.IStatus;
@@ -25,7 +25,7 @@ import org.osgi.util.tracker.ServiceTracker;
 public class Activator implements BundleActivator {
 
 	// The plug-in ID
-	public static final String PLUGIN_ID = "org.eclipse.ecf.provider.filetransfer.httpclient4"; //$NON-NLS-1$
+	public static final String PLUGIN_ID = "de.yatta.ecf.provider.filetransfer.httpclient45"; //$NON-NLS-1$
 
 	// The shared instance
 	private static Activator plugin;
@@ -54,7 +54,7 @@ public class Activator implements BundleActivator {
 		// initialize the default sslSocketFactoryModifier.  This instance is then used within HttpClientRetrieveFileTransfer.setupHostAndPort
 		// to set the socket factory for the specific proxy and httpclient instance
 		try {
-			Class socketFactoryModifierClass = Class.forName("org.eclipse.ecf.internal.provider.filetransfer.httpclient4.ssl.SSLSocketFactoryModifier"); //$NON-NLS-1$
+			Class socketFactoryModifierClass = Class.forName("de.yatta.ecf.internal.provider.filetransfer.httpclient45.ssl.SSLSocketFactoryModifier"); //$NON-NLS-1$
 			sslSocketFactoryModifier = (ISSLSocketFactoryModifier) socketFactoryModifierClass.newInstance();
 		} catch (ClassNotFoundException e) {
 			// will occur if fragment is not installed or not on proper execution environment

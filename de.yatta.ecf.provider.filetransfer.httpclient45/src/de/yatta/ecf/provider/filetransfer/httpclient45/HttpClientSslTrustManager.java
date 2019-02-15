@@ -9,7 +9,7 @@
  *    Composent, Inc. - initial API and implementation
  *****************************************************************************/
 
-package org.eclipse.ecf.provider.filetransfer.httpclient4;
+package de.yatta.ecf.provider.filetransfer.httpclient45;
 
 import javax.net.ssl.X509TrustManager;
 

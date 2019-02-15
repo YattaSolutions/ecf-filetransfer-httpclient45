@@ -10,7 +10,7 @@
  *    Henrich Kraemer - bug 263869, testHttpsReceiveFile fails using HTTP proxy
  *****************************************************************************/
 
-package org.eclipse.ecf.internal.provider.filetransfer.httpclient4;
+package de.yatta.ecf.internal.provider.filetransfer.httpclient45;
 
 import java.io.IOException;
 import javax.net.ssl.SSLSocketFactory;

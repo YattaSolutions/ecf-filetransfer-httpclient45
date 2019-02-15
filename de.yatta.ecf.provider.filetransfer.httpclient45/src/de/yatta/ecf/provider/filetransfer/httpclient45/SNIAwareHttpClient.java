@@ -7,7 +7,7 @@
 * Contributors:
 *   Antonio Garcia-Dominguez - initial API and implementation
 ******************************************************************************/
-package org.eclipse.ecf.provider.filetransfer.httpclient4;
+package de.yatta.ecf.provider.filetransfer.httpclient45;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;

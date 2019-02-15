@@ -11,7 +11,7 @@
  *  Henrich Kraemer - bug 263613, [transport] Update site contacting / downloading is not cancelable
  *  Thomas Joiner - HttpClient 4 implementation
  ******************************************************************************/
-package org.eclipse.ecf.provider.filetransfer.httpclient4;
+package de.yatta.ecf.provider.filetransfer.httpclient45;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -79,14 +79,6 @@ import org.eclipse.ecf.filetransfer.events.IFileTransferConnectStartEvent;
 import org.eclipse.ecf.filetransfer.events.socket.ISocketEventSource;
 import org.eclipse.ecf.filetransfer.events.socket.ISocketListener;
 import org.eclipse.ecf.filetransfer.identity.IFileID;
-import org.eclipse.ecf.internal.provider.filetransfer.httpclient4.Activator;
-import org.eclipse.ecf.internal.provider.filetransfer.httpclient4.ConnectingSocketMonitor;
-import org.eclipse.ecf.internal.provider.filetransfer.httpclient4.DebugOptions;
-import org.eclipse.ecf.internal.provider.filetransfer.httpclient4.ECFHttpClientProtocolSocketFactory;
-import org.eclipse.ecf.internal.provider.filetransfer.httpclient4.ECFHttpClientSecureProtocolSocketFactory;
-import org.eclipse.ecf.internal.provider.filetransfer.httpclient4.HttpClientProxyCredentialProvider;
-import org.eclipse.ecf.internal.provider.filetransfer.httpclient4.ISSLSocketFactoryModifier;
-import org.eclipse.ecf.internal.provider.filetransfer.httpclient4.Messages;
 import org.eclipse.ecf.provider.filetransfer.events.socket.SocketEventSource;
 import org.eclipse.ecf.provider.filetransfer.identity.FileTransferID;
 import org.eclipse.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer;
@@ -95,16 +87,25 @@ import org.eclipse.ecf.provider.filetransfer.util.JREProxyHelper;
 import org.eclipse.ecf.provider.filetransfer.util.ProxySetupHelper;
 import org.eclipse.osgi.util.NLS;
 
+import de.yatta.ecf.internal.provider.filetransfer.httpclient45.Activator;
+import de.yatta.ecf.internal.provider.filetransfer.httpclient45.ConnectingSocketMonitor;
+import de.yatta.ecf.internal.provider.filetransfer.httpclient45.DebugOptions;
+import de.yatta.ecf.internal.provider.filetransfer.httpclient45.ECFHttpClientProtocolSocketFactory;
+import de.yatta.ecf.internal.provider.filetransfer.httpclient45.ECFHttpClientSecureProtocolSocketFactory;
+import de.yatta.ecf.internal.provider.filetransfer.httpclient45.HttpClientProxyCredentialProvider;
+import de.yatta.ecf.internal.provider.filetransfer.httpclient45.ISSLSocketFactoryModifier;
+import de.yatta.ecf.internal.provider.filetransfer.httpclient45.Messages;
+
 public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer {
 
 	private static final String USERNAME_PREFIX = Messages.HttpClientRetrieveFileTransfer_Username_Prefix;
 
 	// changing to 2 minutes (120000) as per bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=266246
-	// 10/26/2009:  Added being able to set with system property with name org.eclipse.ecf.provider.filetransfer.httpclient4.retrieve.connectTimeout
+	// 10/26/2009:  Added being able to set with system property with name de.yatta.ecf.provider.filetransfer.httpclient45.retrieve.connectTimeout
 	// for https://bugs.eclipse.org/bugs/show_bug.cgi?id=292995
 	protected static final int DEFAULT_CONNECTION_TIMEOUT = HttpClientOptions.RETRIEVE_DEFAULT_CONNECTION_TIMEOUT;
 	// changing to 2 minutes (120000) as per bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=266246
-	// 10/26/2009:  Added being able to set with system property with name org.eclipse.ecf.provider.filetransfer.httpclient4.retrieve.readTimeout
+	// 10/26/2009:  Added being able to set with system property with name de.yatta.ecf.provider.filetransfer.httpclient45.retrieve.readTimeout
 	// for https://bugs.eclipse.org/bugs/show_bug.cgi?id=292995
 	protected static final int DEFAULT_READ_TIMEOUT = HttpClientOptions.RETRIEVE_DEFAULT_READ_TIMEOUT;
 
@@ -532,7 +533,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
 				}
 				return result;
 			}
-			o = localOptions.get("org.eclipse.ecf.provider.filetransfer.httpclient4.retrieve.readTimeout"); //$NON-NLS-1$
+			o = localOptions.get("de.yatta.ecf.provider.filetransfer.httpclient45.retrieve.readTimeout"); //$NON-NLS-1$
 			if (o != null) {
 				if (o instanceof Integer) {
 					result = ((Integer) o).intValue();
@@ -562,7 +563,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
 				}
 				return result;
 			}
-			o = localOptions.get("org.eclipse.ecf.provider.filetransfer.httpclient4.retrieve.connectTimeout"); //$NON-NLS-1$
+			o = localOptions.get("de.yatta.ecf.provider.filetransfer.httpclient45.retrieve.connectTimeout"); //$NON-NLS-1$
 			if (o != null) {
 				if (o instanceof Integer) {
 					result = ((Integer) o).intValue();

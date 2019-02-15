@@ -6,7 +6,7 @@
  * 
  * Contributors: Composent, Inc. - initial API and implementation
  ******************************************************************************/
-package org.eclipse.ecf.internal.provider.filetransfer.httpclient4;
+package de.yatta.ecf.internal.provider.filetransfer.httpclient45;
 
 public interface DebugOptions {
 
