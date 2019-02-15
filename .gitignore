@@ -1,0 +1,8 @@
+.metadata
+.DS_Store
+/data/
+bin/
+target/
+/stack.txt
+/stackSuspend.txt
+build.cs.sh

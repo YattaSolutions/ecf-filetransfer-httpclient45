@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+   <parent>
+      <groupId>de.yatta.eclipse.launcher.features</groupId>
+      <artifactId>de.yatta.eclipse.launcher-eclipse-feature</artifactId>
+      <version>1.3.35-SNAPSHOT</version>
+      <relativePath>../de.yatta.eclipse.launcher-parent/eclipse-feature/pom.xml</relativePath>
+   </parent>
+   <name>Yatta Profiles Shared EPL License Feature</name>
+   <artifactId>de.yatta.eclipse.launcher.license.epl</artifactId>
+   <packaging>eclipse-feature</packaging>
+</project>
