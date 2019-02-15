@@ -31,104 +31,124 @@ import org.eclipse.ecf.provider.filetransfer.events.socket.SocketClosedEvent;
 import org.eclipse.ecf.provider.filetransfer.events.socket.SocketConnectedEvent;
 import org.eclipse.ecf.provider.filetransfer.events.socket.SocketCreatedEvent;
 
-public class ECFHttpClientProtocolSocketFactory implements SchemeSocketFactory {
+public class ECFHttpClientProtocolSocketFactory implements SchemeSocketFactory
+{
 
-	protected ISocketEventSource source;
-	private INonconnectedSocketFactory unconnectedFactory;
-	private ISocketListener socketConnectListener;
+   protected ISocketEventSource source;
+   private INonconnectedSocketFactory unconnectedFactory;
+   private ISocketListener socketConnectListener;
 
-	private static final ISocketListener NULL_SOCKET_EVENT_LISTENER = new ISocketListener() {
-		public void handleSocketEvent(ISocketEvent event) {
-			//empty
-		}
-	};
+   private static final ISocketListener NULL_SOCKET_EVENT_LISTENER = new ISocketListener() {
+      public void handleSocketEvent(ISocketEvent event)
+      {
+         //empty
+      }
+   };
 
-	public ECFHttpClientProtocolSocketFactory(INonconnectedSocketFactory unconnectedFactory, ISocketEventSource source, ISocketListener socketConnectListener) {
-		super();
-		Assert.isNotNull(unconnectedFactory);
-		Assert.isNotNull(source);
-		this.unconnectedFactory = unconnectedFactory;
-		this.source = source;
-		this.socketConnectListener = socketConnectListener != null ? socketConnectListener : NULL_SOCKET_EVENT_LISTENER;
-	}
+   public ECFHttpClientProtocolSocketFactory(INonconnectedSocketFactory unconnectedFactory, ISocketEventSource source, ISocketListener socketConnectListener)
+   {
+      super();
+      Assert.isNotNull(unconnectedFactory);
+      Assert.isNotNull(source);
+      this.unconnectedFactory = unconnectedFactory;
+      this.source = source;
+      this.socketConnectListener = socketConnectListener != null ? socketConnectListener : NULL_SOCKET_EVENT_LISTENER;
+   }
 
-	public ECFHttpClientProtocolSocketFactory(final SocketFactory socketFactory, ISocketEventSource source, ISocketListener socketConnectListener) {
-		this(new INonconnectedSocketFactory() {
-			public Socket createSocket() throws IOException {
-				return socketFactory.createSocket();
-			}
-		}, source, socketConnectListener);
-	}
+   public ECFHttpClientProtocolSocketFactory(final SocketFactory socketFactory, ISocketEventSource source, ISocketListener socketConnectListener)
+   {
+      this(new INonconnectedSocketFactory() {
+         public Socket createSocket() throws IOException
+         {
+            return socketFactory.createSocket();
+         }
+      }, source, socketConnectListener);
+   }
 
-	public Socket createSocket(HttpParams params) throws IOException {
-		Trace.entering(Activator.PLUGIN_ID, DebugOptions.METHODS_ENTERING, ECFHttpClientProtocolSocketFactory.class, "createSocket"); //$NON-NLS-1$
+   public Socket createSocket(HttpParams params) throws IOException
+   {
+      Trace.entering(Activator.PLUGIN_ID, DebugOptions.METHODS_ENTERING, ECFHttpClientProtocolSocketFactory.class, "createSocket"); //$NON-NLS-1$
 
-		final Socket factorySocket = unconnectedFactory.createSocket();
-		fireEvent(socketConnectListener, new SocketCreatedEvent(source, factorySocket));
+      final Socket factorySocket = unconnectedFactory.createSocket();
+      fireEvent(socketConnectListener, new SocketCreatedEvent(source, factorySocket));
 
-		Trace.exiting(Activator.PLUGIN_ID, DebugOptions.METHODS_EXITING, ECFHttpClientProtocolSocketFactory.class, "socketCreated " + factorySocket); //$NON-NLS-1$
+      Trace.exiting(Activator.PLUGIN_ID, DebugOptions.METHODS_EXITING, ECFHttpClientProtocolSocketFactory.class, "socketCreated " + factorySocket); //$NON-NLS-1$
 
-		return factorySocket;
-	}
+      return factorySocket;
+   }
 
-	public Socket connectSocket(final Socket sock, InetSocketAddress remoteAddress, InetSocketAddress localAddress, HttpParams params) throws IOException, UnknownHostException, ConnectTimeoutException {
-		int timeout = params.getIntParameter(CoreConnectionPNames.SO_TIMEOUT, 0);
+   public Socket connectSocket(final Socket sock, InetSocketAddress remoteAddress, InetSocketAddress localAddress, HttpParams params) throws IOException, UnknownHostException, ConnectTimeoutException
+   {
+      int timeout = params.getIntParameter(CoreConnectionPNames.SO_TIMEOUT, 0);
 
-		Trace.entering(Activator.PLUGIN_ID, DebugOptions.METHODS_ENTERING, ECFHttpClientProtocolSocketFactory.class, "connectSocket " + remoteAddress.toString() + " timeout=" + timeout); //$NON-NLS-1$ //$NON-NLS-2$
+      Trace.entering(Activator.PLUGIN_ID, DebugOptions.METHODS_ENTERING, ECFHttpClientProtocolSocketFactory.class, "connectSocket " + remoteAddress.toString() + " timeout=" + timeout); //$NON-NLS-1$ //$NON-NLS-2$
 
-		try {
-			if (localAddress != null) {
-				// only explicitly bind if a local address is actually provided (bug 444377)
-				Trace.trace(Activator.PLUGIN_ID, "bind(" + localAddress + ")"); //$NON-NLS-1$//$NON-NLS-2$
-				sock.bind(localAddress);
-			}
-			Trace.trace(Activator.PLUGIN_ID, "connect(" + remoteAddress.toString() + ", " + timeout + ")"); //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$
-			sock.connect(remoteAddress, timeout);
-			Trace.trace(Activator.PLUGIN_ID, "connected"); //$NON-NLS-1$
-		} catch (IOException e) {
-			Trace.catching(Activator.PLUGIN_ID, DebugOptions.EXCEPTIONS_CATCHING, ECFHttpClientProtocolSocketFactory.class, "createSocket", e); //$NON-NLS-1$
-			fireEvent(socketConnectListener, new SocketClosedEvent(source, sock, sock));
-			Trace.throwing(Activator.PLUGIN_ID, DebugOptions.EXCEPTIONS_THROWING, ECFHttpClientProtocolSocketFactory.class, "createSocket", e); //$NON-NLS-1$
-			throw e;
-		}
+      try
+      {
+         if (localAddress != null)
+         {
+            // only explicitly bind if a local address is actually provided (bug 444377)
+            Trace.trace(Activator.PLUGIN_ID, "bind(" + localAddress + ")"); //$NON-NLS-1$//$NON-NLS-2$
+            sock.bind(localAddress);
+         }
+         Trace.trace(Activator.PLUGIN_ID, "connect(" + remoteAddress.toString() + ", " + timeout + ")"); //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$
+         sock.connect(remoteAddress, timeout);
+         Trace.trace(Activator.PLUGIN_ID, "connected"); //$NON-NLS-1$
+      }
+      catch (IOException e)
+      {
+         Trace.catching(Activator.PLUGIN_ID, DebugOptions.EXCEPTIONS_CATCHING, ECFHttpClientProtocolSocketFactory.class, "createSocket", e); //$NON-NLS-1$
+         fireEvent(socketConnectListener, new SocketClosedEvent(source, sock, sock));
+         Trace.throwing(Activator.PLUGIN_ID, DebugOptions.EXCEPTIONS_THROWING, ECFHttpClientProtocolSocketFactory.class, "createSocket", e); //$NON-NLS-1$
+         throw e;
+      }
 
-		Socket toReturn;
-		Socket wrapped = new CloseMonitoringSocket(sock, socketConnectListener, source);
+      Socket toReturn;
+      Socket wrapped = new CloseMonitoringSocket(sock, socketConnectListener, source);
 
-		SocketConnectedEvent connectedEvent = new SocketConnectedEvent(source, sock, wrapped);
-		fireEvent(socketConnectListener, connectedEvent);
+      SocketConnectedEvent connectedEvent = new SocketConnectedEvent(source, sock, wrapped);
+      fireEvent(socketConnectListener, connectedEvent);
 
-		// Change the wrapped socket if one of the receivers of the SocketConnectedEvent changed it
-		if (connectedEvent.getSocket() != wrapped) {
-			toReturn = connectedEvent.getSocket();
-			((CloseMonitoringSocket) wrapped).setWrappedSocket(toReturn);
-		} else {
-			toReturn = wrapped;
-		}
+      // Change the wrapped socket if one of the receivers of the SocketConnectedEvent changed it
+      if (connectedEvent.getSocket() != wrapped)
+      {
+         toReturn = connectedEvent.getSocket();
+         ((CloseMonitoringSocket)wrapped).setWrappedSocket(toReturn);
+      }
+      else
+      {
+         toReturn = wrapped;
+      }
 
-		return toReturn;
-	}
+      return toReturn;
+   }
 
-	private static void fireEvent(final ISocketListener spyListener, ISocketEvent event) {
-		if (spyListener != null) {
-			spyListener.handleSocketEvent(event);
-		}
-		event.getSource().fireEvent(event);
-	}
+   private static void fireEvent(final ISocketListener spyListener, ISocketEvent event)
+   {
+      if (spyListener != null)
+      {
+         spyListener.handleSocketEvent(event);
+      }
+      event.getSource().fireEvent(event);
+   }
 
-	public boolean isSecure(Socket sock) throws IllegalArgumentException {
-		if (sock instanceof SSLSocket) {
-			throw new IllegalArgumentException("Socket not created by this factory."); //$NON-NLS-1$
-		}
+   public boolean isSecure(Socket sock) throws IllegalArgumentException
+   {
+      if (sock instanceof SSLSocket)
+      {
+         throw new IllegalArgumentException("Socket not created by this factory."); //$NON-NLS-1$
+      }
 
-		return false;
-	}
+      return false;
+   }
 
-	public boolean equals(Object obj) {
-		return (obj instanceof ECFHttpClientProtocolSocketFactory);
-	}
+   public boolean equals(Object obj)
+   {
+      return (obj instanceof ECFHttpClientProtocolSocketFactory);
+   }
 
-	public int hashCode() {
-		return ECFHttpClientProtocolSocketFactory.class.hashCode();
-	}
+   public int hashCode()
+   {
+      return ECFHttpClientProtocolSocketFactory.class.hashCode();
+   }
 }

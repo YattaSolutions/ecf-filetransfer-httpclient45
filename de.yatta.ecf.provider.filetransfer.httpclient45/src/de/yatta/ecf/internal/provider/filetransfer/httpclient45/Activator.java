@@ -22,109 +22,133 @@ import org.osgi.util.tracker.ServiceTracker;
 /**
  * The activator class controls the plug-in life cycle
  */
-public class Activator implements BundleActivator {
+public class Activator implements BundleActivator
+{
 
-	// The plug-in ID
-	public static final String PLUGIN_ID = "de.yatta.ecf.provider.filetransfer.httpclient45"; //$NON-NLS-1$
+   // The plug-in ID
+   public static final String PLUGIN_ID = "de.yatta.ecf.provider.filetransfer.httpclient45"; //$NON-NLS-1$
 
-	// The shared instance
-	private static Activator plugin;
-	private BundleContext context = null;
+   // The shared instance
+   private static Activator plugin;
+   private BundleContext context = null;
 
-	private ServiceTracker logServiceTracker = null;
+   private ServiceTracker logServiceTracker = null;
 
-	private ServiceTracker sslSocketFactoryTracker;
+   private ServiceTracker sslSocketFactoryTracker;
 
-	private ISSLSocketFactoryModifier sslSocketFactoryModifier;
+   private ISSLSocketFactoryModifier sslSocketFactoryModifier;
 
-	/**
-	 * The constructor
-	 */
-	public Activator() {
-		//
-	}
+   /**
+    * The constructor
+    */
+   public Activator()
+   {
+      //
+   }
 
-	public BundleContext getContext() {
-		return context;
-	}
+   public BundleContext getContext()
+   {
+      return context;
+   }
 
-	public void start(BundleContext ctxt) throws Exception {
-		plugin = this;
-		this.context = ctxt;
-		// initialize the default sslSocketFactoryModifier.  This instance is then used within HttpClientRetrieveFileTransfer.setupHostAndPort
-		// to set the socket factory for the specific proxy and httpclient instance
-		try {
-			Class socketFactoryModifierClass = Class.forName("de.yatta.ecf.internal.provider.filetransfer.httpclient45.ssl.SSLSocketFactoryModifier"); //$NON-NLS-1$
-			sslSocketFactoryModifier = (ISSLSocketFactoryModifier) socketFactoryModifierClass.newInstance();
-		} catch (ClassNotFoundException e) {
-			// will occur if fragment is not installed or not on proper execution environment
-		} catch (Throwable t) {
-			log(new Status(IStatus.ERROR, PLUGIN_ID, "Unexpected Error in Activator.start", t)); //$NON-NLS-1$
-		}
+   public void start(BundleContext ctxt) throws Exception
+   {
+      plugin = this;
+      this.context = ctxt;
+      // initialize the default sslSocketFactoryModifier.  This instance is then used within HttpClientRetrieveFileTransfer.setupHostAndPort
+      // to set the socket factory for the specific proxy and httpclient instance
+      try
+      {
+         Class socketFactoryModifierClass = Class.forName("de.yatta.ecf.internal.provider.filetransfer.httpclient45.ssl.SSLSocketFactoryModifier"); //$NON-NLS-1$
+         sslSocketFactoryModifier = (ISSLSocketFactoryModifier)socketFactoryModifierClass.newInstance();
+      }
+      catch (ClassNotFoundException e)
+      {
+         // will occur if fragment is not installed or not on proper execution environment
+      }
+      catch (Throwable t)
+      {
+         log(new Status(IStatus.ERROR, PLUGIN_ID, "Unexpected Error in Activator.start", t)); //$NON-NLS-1$
+      }
 
-	}
+   }
 
-	public ISSLSocketFactoryModifier getSSLSocketFactoryModifier() {
-		return sslSocketFactoryModifier;
-	}
+   public ISSLSocketFactoryModifier getSSLSocketFactoryModifier()
+   {
+      return sslSocketFactoryModifier;
+   }
 
-	public void stop(BundleContext ctxt) throws Exception {
-		if (sslSocketFactoryModifier != null) {
-			sslSocketFactoryModifier.dispose();
-			sslSocketFactoryModifier = null;
-		}
+   public void stop(BundleContext ctxt) throws Exception
+   {
+      if (sslSocketFactoryModifier != null)
+      {
+         sslSocketFactoryModifier.dispose();
+         sslSocketFactoryModifier = null;
+      }
 
-		if (sslSocketFactoryTracker != null) {
-			sslSocketFactoryTracker.close();
-		}
+      if (sslSocketFactoryTracker != null)
+      {
+         sslSocketFactoryTracker.close();
+      }
 
-		if (logServiceTracker != null) {
-			logServiceTracker.close();
-		}
-		this.context = null;
-		plugin = null;
-	}
+      if (logServiceTracker != null)
+      {
+         logServiceTracker.close();
+      }
+      this.context = null;
+      plugin = null;
+   }
 
-	/**
-	 * Returns the shared instance
-	 *
-	 * @return the shared instance
-	 */
-	public synchronized static Activator getDefault() {
-		if (plugin == null) {
-			plugin = new Activator();
-		}
-		return plugin;
-	}
+   /**
+    * Returns the shared instance
+    *
+    * @return the shared instance
+    */
+   public synchronized static Activator getDefault()
+   {
+      if (plugin == null)
+      {
+         plugin = new Activator();
+      }
+      return plugin;
+   }
 
-	private synchronized LogService getLogService() {
-		if (logServiceTracker == null) {
-			logServiceTracker = new ServiceTracker(this.context, LogService.class.getName(), null);
-			logServiceTracker.open();
-		}
-		return (LogService) logServiceTracker.getService();
-	}
+   private synchronized LogService getLogService()
+   {
+      if (logServiceTracker == null)
+      {
+         logServiceTracker = new ServiceTracker(this.context, LogService.class.getName(), null);
+         logServiceTracker.open();
+      }
+      return (LogService)logServiceTracker.getService();
+   }
 
-	public void log(IStatus status) {
-		LogService logService = getLogService();
-		if (logService != null) {
-			logService.log(LogHelper.getLogCode(status), LogHelper.getLogMessage(status), status.getException());
-		}
-	}
+   public void log(IStatus status)
+   {
+      LogService logService = getLogService();
+      if (logService != null)
+      {
+         logService.log(LogHelper.getLogCode(status), LogHelper.getLogMessage(status), status.getException());
+      }
+   }
 
-	public synchronized SSLSocketFactory getSSLSocketFactory() {
-		if (sslSocketFactoryTracker == null) {
-			sslSocketFactoryTracker = new ServiceTracker(this.context, SSLSocketFactory.class.getName(), null);
-			sslSocketFactoryTracker.open();
-		}
-		return (SSLSocketFactory) sslSocketFactoryTracker.getService();
-	}
+   public synchronized SSLSocketFactory getSSLSocketFactory()
+   {
+      if (sslSocketFactoryTracker == null)
+      {
+         sslSocketFactoryTracker = new ServiceTracker(this.context, SSLSocketFactory.class.getName(), null);
+         sslSocketFactoryTracker.open();
+      }
+      return (SSLSocketFactory)sslSocketFactoryTracker.getService();
+   }
 
-	public static void logNoProxyWarning(Throwable e) {
-		Activator a = getDefault();
-		if (a != null) {
-			a.log(new Status(IStatus.WARNING, Activator.PLUGIN_ID, IStatus.ERROR, "Warning: Platform proxy API not available", e)); //$NON-NLS-1$
-		}
-	}
+   public static void logNoProxyWarning(Throwable e)
+   {
+      Activator a = getDefault();
+      if (a != null)
+      {
+         a.log(new Status(IStatus.WARNING, Activator.PLUGIN_ID, IStatus.ERROR, "Warning: Platform proxy API not available", e)); //$NON-NLS-1$
+      }
+   }
 
 }

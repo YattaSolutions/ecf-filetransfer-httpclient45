@@ -27,45 +27,55 @@ import org.eclipse.ecf.filetransfer.service.IRemoteFileSystemBrowserFactory;
 import org.eclipse.ecf.provider.filetransfer.identity.FileTransferNamespace;
 import org.eclipse.osgi.util.NLS;
 
-public class HttpClientBrowseFileTransferFactory implements IRemoteFileSystemBrowserFactory {
+public class HttpClientBrowseFileTransferFactory implements IRemoteFileSystemBrowserFactory
+{
 
-	public IRemoteFileSystemBrowser newInstance() {
-		return new IRemoteFileSystemBrowser() {
+   public IRemoteFileSystemBrowser newInstance()
+   {
+      return new IRemoteFileSystemBrowser() {
 
-			private Proxy proxy;
-			private IConnectContext connectContext;
+         private Proxy proxy;
+         private IConnectContext connectContext;
 
-			public Namespace getBrowseNamespace() {
-				return IDFactory.getDefault().getNamespaceByName(FileTransferNamespace.PROTOCOL);
-			}
+         public Namespace getBrowseNamespace()
+         {
+            return IDFactory.getDefault().getNamespaceByName(FileTransferNamespace.PROTOCOL);
+         }
 
-			public IRemoteFileSystemRequest sendBrowseRequest(IFileID directoryOrFileId, IRemoteFileSystemListener listener) throws RemoteFileSystemException {
-				Assert.isNotNull(directoryOrFileId);
-				Assert.isNotNull(listener);
-				URL url;
-				try {
-					url = directoryOrFileId.getURL();
-				} catch (final MalformedURLException e) {
-					throw new RemoteFileSystemException(NLS.bind("Exception creating URL for {0}", directoryOrFileId)); //$NON-NLS-1$
-				}
+         public IRemoteFileSystemRequest sendBrowseRequest(IFileID directoryOrFileId, IRemoteFileSystemListener listener) throws RemoteFileSystemException
+         {
+            Assert.isNotNull(directoryOrFileId);
+            Assert.isNotNull(listener);
+            URL url;
+            try
+            {
+               url = directoryOrFileId.getURL();
+            }
+            catch (final MalformedURLException e)
+            {
+               throw new RemoteFileSystemException(NLS.bind("Exception creating URL for {0}", directoryOrFileId)); //$NON-NLS-1$
+            }
 
-				HttpClientFileSystemBrowser browser = new HttpClientFileSystemBrowser(new SNIAwareHttpClient(), directoryOrFileId, listener, url, connectContext, proxy);
-				return browser.sendBrowseRequest();
-			}
+            HttpClientFileSystemBrowser browser = new HttpClientFileSystemBrowser(new SNIAwareHttpClient(), directoryOrFileId, listener, url, connectContext, proxy);
+            return browser.sendBrowseRequest();
+         }
 
-			public void setConnectContextForAuthentication(IConnectContext connectContext) {
-				this.connectContext = connectContext;
-			}
+         public void setConnectContextForAuthentication(IConnectContext connectContext)
+         {
+            this.connectContext = connectContext;
+         }
 
-			public void setProxy(Proxy proxy) {
-				this.proxy = proxy;
-			}
+         public void setProxy(Proxy proxy)
+         {
+            this.proxy = proxy;
+         }
 
-			public Object getAdapter(Class adapter) {
-				return null;
-			}
+         public Object getAdapter(Class adapter)
+         {
+            return null;
+         }
 
-		};
+      };
 
-	}
+   }
 }

@@ -20,16 +20,18 @@ import org.apache.http.impl.conn.SingleClientConnManager;
 import org.eclipse.ecf.filetransfer.service.IRetrieveFileTransfer;
 import org.eclipse.ecf.filetransfer.service.IRetrieveFileTransferFactory;
 
-public class HttpClientRetrieveFileTransferFactory implements IRetrieveFileTransferFactory {
+public class HttpClientRetrieveFileTransferFactory implements IRetrieveFileTransferFactory
+{
 
-	public IRetrieveFileTransfer newInstance() {
+   public IRetrieveFileTransfer newInstance()
+   {
 
-		SSLSocketFactory factory = new SSLSocketFactory(SSLContexts.createSystemDefault(), SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
+      SSLSocketFactory factory = new SSLSocketFactory(SSLContexts.createSystemDefault(), SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
 
-		final SchemeRegistry registry = new SchemeRegistry();
-		registry.register(new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
-		registry.register(new Scheme("https", 443, factory));
+      final SchemeRegistry registry = new SchemeRegistry();
+      registry.register(new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
+      registry.register(new Scheme("https", 443, factory));
 
-		return new HttpClientRetrieveFileTransfer(new SNIAwareHttpClient(new SingleClientConnManager(registry)));
-	}
+      return new HttpClientRetrieveFileTransfer(new SNIAwareHttpClient(new SingleClientConnManager(registry)));
+   }
 }

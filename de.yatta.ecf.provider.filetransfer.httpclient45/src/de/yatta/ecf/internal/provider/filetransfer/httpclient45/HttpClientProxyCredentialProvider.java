@@ -21,95 +21,114 @@ import org.eclipse.ecf.core.util.Proxy;
 import org.eclipse.ecf.core.util.ProxyAddress;
 import org.eclipse.ecf.core.util.Trace;
 
-public abstract class HttpClientProxyCredentialProvider implements CredentialsProvider {
+public abstract class HttpClientProxyCredentialProvider implements CredentialsProvider
+{
 
-	abstract protected Proxy getECFProxy();
+   abstract protected Proxy getECFProxy();
 
-	abstract protected Credentials getNTLMCredentials(Proxy proxy);
+   abstract protected Credentials getNTLMCredentials(Proxy proxy);
 
-	private Map cachedCredentials;
+   private Map cachedCredentials;
 
-	public HttpClientProxyCredentialProvider() {
-		cachedCredentials = new ConcurrentHashMap<AuthScope, Credentials>();
-	}
+   public HttpClientProxyCredentialProvider()
+   {
+      cachedCredentials = new ConcurrentHashMap<AuthScope, Credentials>();
+   }
 
-	public void setCredentials(AuthScope authscope, Credentials credentials) {
-		if (authscope == null)
-			throw new IllegalArgumentException("Authentication scope may not be null"); //$NON-NLS-1$
-		this.cachedCredentials.put(authscope, credentials);
-	}
+   public void setCredentials(AuthScope authscope, Credentials credentials)
+   {
+      if (authscope == null)
+         throw new IllegalArgumentException("Authentication scope may not be null"); //$NON-NLS-1$
+      this.cachedCredentials.put(authscope, credentials);
+   }
 
-	public Credentials getCredentials(AuthScope authscope) {
-		Trace.entering(Activator.PLUGIN_ID, DebugOptions.METHODS_ENTERING, HttpClientProxyCredentialProvider.class, "getCredentials " + authscope); //$NON-NLS-1$
+   public Credentials getCredentials(AuthScope authscope)
+   {
+      Trace.entering(Activator.PLUGIN_ID, DebugOptions.METHODS_ENTERING, HttpClientProxyCredentialProvider.class, "getCredentials " + authscope); //$NON-NLS-1$
 
-		// First check to see whether given authscope matches any authscope 
-		// already cached.
-		Credentials result = matchCredentials(this.cachedCredentials, authscope);
-		// If we have a match, return credentials
-		if (result != null)
-			return result;
-		// If we don't have a match, first get ECF proxy, if any
-		Proxy proxy = getECFProxy();
-		if (proxy == null)
-			return null;
+      // First check to see whether given authscope matches any authscope 
+      // already cached.
+      Credentials result = matchCredentials(this.cachedCredentials, authscope);
+      // If we have a match, return credentials
+      if (result != null)
+         return result;
+      // If we don't have a match, first get ECF proxy, if any
+      Proxy proxy = getECFProxy();
+      if (proxy == null)
+         return null;
 
-		// Make sure that authscope and proxy host and port match
-		if (!matchAuthScopeAndProxy(authscope, proxy))
-			return null;
+      // Make sure that authscope and proxy host and port match
+      if (!matchAuthScopeAndProxy(authscope, proxy))
+         return null;
 
-		// Then match scheme, and get credentials from proxy (if it's scheme we know about)
-		Credentials credentials = null;
-		if ("ntlm".equalsIgnoreCase(authscope.getScheme())) { //$NON-NLS-1$
-			credentials = getNTLMCredentials(proxy);
-		} else if ("basic".equalsIgnoreCase(authscope.getScheme()) || //$NON-NLS-1$
-				"digest".equalsIgnoreCase(authscope.getScheme())) { //$NON-NLS-1$
-			final String proxyUsername = proxy.getUsername();
-			final String proxyPassword = proxy.getPassword();
-			// If credentials present for proxy then we're done
-			if (proxyUsername != null) {
-				credentials = new UsernamePasswordCredentials(proxyUsername, proxyPassword);
-			}
-		} else if ("negotiate".equalsIgnoreCase(authscope.getScheme())) { //$NON-NLS-1$
-			Trace.trace(Activator.PLUGIN_ID, "SPNEGO is not supported, if you can contribute support, please do so."); //$NON-NLS-1$
-		} else {
-			Trace.trace(Activator.PLUGIN_ID, "Unrecognized authentication scheme."); //$NON-NLS-1$
-		}
+      // Then match scheme, and get credentials from proxy (if it's scheme we know about)
+      Credentials credentials = null;
+      if ("ntlm".equalsIgnoreCase(authscope.getScheme())) //$NON-NLS-1$
+      {
+         credentials = getNTLMCredentials(proxy);
+      }
+      else if ("basic".equalsIgnoreCase(authscope.getScheme()) || //$NON-NLS-1$
+            "digest".equalsIgnoreCase(authscope.getScheme())) //$NON-NLS-1$
+      {
+         final String proxyUsername = proxy.getUsername();
+         final String proxyPassword = proxy.getPassword();
+         // If credentials present for proxy then we're done
+         if (proxyUsername != null)
+         {
+            credentials = new UsernamePasswordCredentials(proxyUsername, proxyPassword);
+         }
+      }
+      else if ("negotiate".equalsIgnoreCase(authscope.getScheme())) //$NON-NLS-1$
+      {
+         Trace.trace(Activator.PLUGIN_ID, "SPNEGO is not supported, if you can contribute support, please do so."); //$NON-NLS-1$
+      }
+      else
+      {
+         Trace.trace(Activator.PLUGIN_ID, "Unrecognized authentication scheme."); //$NON-NLS-1$
+      }
 
-		// Put found credentials in cache for next time
-		if (credentials != null)
-			cachedCredentials.put(authscope, credentials);
+      // Put found credentials in cache for next time
+      if (credentials != null)
+         cachedCredentials.put(authscope, credentials);
 
-		return credentials;
-	}
+      return credentials;
+   }
 
-	private boolean matchAuthScopeAndProxy(AuthScope authscope, Proxy proxy) {
-		ProxyAddress proxyAddress = proxy.getAddress();
-		return (authscope.getHost().equals(proxyAddress.getHostName()) && (authscope.getPort() == proxyAddress.getPort()));
-	}
+   private boolean matchAuthScopeAndProxy(AuthScope authscope, Proxy proxy)
+   {
+      ProxyAddress proxyAddress = proxy.getAddress();
+      return (authscope.getHost().equals(proxyAddress.getHostName()) && (authscope.getPort() == proxyAddress.getPort()));
+   }
 
-	private static Credentials matchCredentials(final Map<AuthScope, Credentials> map, final AuthScope authscope) {
-		// see if we get a direct hit
-		Credentials creds = map.get(authscope);
-		if (creds == null) {
-			// Nope.
-			// Do a full scan
-			int bestMatchFactor = -1;
-			AuthScope bestMatch = null;
-			for (AuthScope current : map.keySet()) {
-				int factor = authscope.match(current);
-				if (factor > bestMatchFactor) {
-					bestMatchFactor = factor;
-					bestMatch = current;
-				}
-			}
-			if (bestMatch != null) {
-				creds = map.get(bestMatch);
-			}
-		}
-		return creds;
-	}
+   private static Credentials matchCredentials(final Map<AuthScope, Credentials> map, final AuthScope authscope)
+   {
+      // see if we get a direct hit
+      Credentials creds = map.get(authscope);
+      if (creds == null)
+      {
+         // Nope.
+         // Do a full scan
+         int bestMatchFactor = -1;
+         AuthScope bestMatch = null;
+         for (AuthScope current : map.keySet())
+         {
+            int factor = authscope.match(current);
+            if (factor > bestMatchFactor)
+            {
+               bestMatchFactor = factor;
+               bestMatch = current;
+            }
+         }
+         if (bestMatch != null)
+         {
+            creds = map.get(bestMatch);
+         }
+      }
+      return creds;
+   }
 
-	public void clear() {
-		this.cachedCredentials.clear();
-	}
+   public void clear()
+   {
+      this.cachedCredentials.clear();
+   }
 }

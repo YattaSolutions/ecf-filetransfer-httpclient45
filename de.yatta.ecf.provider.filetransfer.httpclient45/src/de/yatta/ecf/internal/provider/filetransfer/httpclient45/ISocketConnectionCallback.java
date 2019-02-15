@@ -14,11 +14,12 @@ package de.yatta.ecf.internal.provider.filetransfer.httpclient45;
 import java.io.IOException;
 import java.net.Socket;
 
-public interface ISocketConnectionCallback {
-	void onSocketCreated(Socket socket);
+public interface ISocketConnectionCallback
+{
+   void onSocketCreated(Socket socket);
 
-	void onSocketConnected(Socket socket);
+   void onSocketConnected(Socket socket);
 
-	void onSocketConnectionFailed(Socket socket, IOException e);
+   void onSocketConnectionFailed(Socket socket, IOException e);
 
 }

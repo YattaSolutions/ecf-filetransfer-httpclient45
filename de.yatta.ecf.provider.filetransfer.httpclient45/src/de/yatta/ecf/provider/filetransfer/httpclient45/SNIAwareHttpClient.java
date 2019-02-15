@@ -31,44 +31,59 @@ import org.apache.http.protocol.HttpContext;
 /**
  * @since 1.1
  */
-final class SNIAwareHttpClient extends DefaultHttpClient {
+final class SNIAwareHttpClient extends DefaultHttpClient
+{
 
-	public SNIAwareHttpClient() {
-		// default constructor
-	}
+   public SNIAwareHttpClient()
+   {
+      // default constructor
+   }
 
-	public SNIAwareHttpClient(SingleClientConnManager singleClientConnManager) {
-		super(singleClientConnManager);
-	}
+   public SNIAwareHttpClient(SingleClientConnManager singleClientConnManager)
+   {
+      super(singleClientConnManager);
+   }
 
-	@Override
-	protected ClientConnectionManager createClientConnectionManager() {
-		SSLSocketFactory factory = new SSLSocketFactory(SSLContexts.createSystemDefault(), SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER) {
-			@Override
-			public Socket connectSocket(int connectTimeout, Socket socket, HttpHost host, InetSocketAddress remoteAddress, InetSocketAddress localAddress, HttpContext context) throws IOException, ConnectTimeoutException {
+   @Override
+   protected ClientConnectionManager createClientConnectionManager()
+   {
+      SSLSocketFactory factory = new SSLSocketFactory(SSLContexts.createSystemDefault(), SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER) {
+         @Override
+         public Socket connectSocket(int connectTimeout, Socket socket, HttpHost host, InetSocketAddress remoteAddress, InetSocketAddress localAddress, HttpContext context) throws IOException, ConnectTimeoutException
+         {
 
-				// This is to work around HttpClient bug as described
-				// in description and comments here:  
-				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=478655
-				if (socket instanceof SSLSocket) {
-					try {
-						final Method mSetHost = socket.getClass().getMethod("setHost", String.class);
-						mSetHost.setAccessible(true);
-						mSetHost.invoke(socket, host.getHostName());
-					} catch (NoSuchMethodException ex) {
-					} catch (IllegalAccessException ex) {
-					} catch (InvocationTargetException ex) {
-					} catch (RuntimeException ex) {
-					}
-				}
-				return super.connectSocket(connectTimeout, socket, host, remoteAddress, localAddress, context);
-			}
-		};
+            // This is to work around HttpClient bug as described
+            // in description and comments here:  
+            // https://bugs.eclipse.org/bugs/show_bug.cgi?id=478655
+            if (socket instanceof SSLSocket)
+            {
+               try
+               {
+                  final Method mSetHost = socket.getClass().getMethod("setHost", String.class);
+                  mSetHost.setAccessible(true);
+                  mSetHost.invoke(socket, host.getHostName());
+               }
+               catch (NoSuchMethodException ex)
+               {
+               }
+               catch (IllegalAccessException ex)
+               {
+               }
+               catch (InvocationTargetException ex)
+               {
+               }
+               catch (RuntimeException ex)
+               {
+               }
+            }
+            return super.connectSocket(connectTimeout, socket, host, remoteAddress, localAddress, context);
+         }
+      };
 
-		final SchemeRegistry registry = new SchemeRegistry();
-		registry.register(new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
-		registry.register(new Scheme("https", 443, factory));
+      final SchemeRegistry registry = new SchemeRegistry();
+      registry.register(new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
+      registry.register(new Scheme("https", 443, factory));
 
-		return new BasicClientConnectionManager(registry);
-	}
+      return new BasicClientConnectionManager(registry);
+   }
 }

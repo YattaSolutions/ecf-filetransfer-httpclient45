@@ -19,12 +19,13 @@ import org.eclipse.ecf.filetransfer.events.socketfactory.INonconnectedSocketFact
 /**
  * Internal interface to allow for use of httpclient.ssl provided socket factory
  */
-public interface ISSLSocketFactoryModifier {
+public interface ISSLSocketFactoryModifier
+{
 
-	public SSLSocketFactory getSSLSocketFactory() throws IOException;
+   public SSLSocketFactory getSSLSocketFactory() throws IOException;
 
-	public INonconnectedSocketFactory getNonconnnectedSocketFactory();
+   public INonconnectedSocketFactory getNonconnnectedSocketFactory();
 
-	public void dispose();
+   public void dispose();
 
 }

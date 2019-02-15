@@ -21,49 +21,61 @@ import org.eclipse.ecf.filetransfer.events.socket.ISocketListener;
 import org.eclipse.ecf.provider.filetransfer.events.socket.AbstractSocketWrapper;
 import org.eclipse.ecf.provider.filetransfer.events.socket.SocketClosedEvent;
 
-class CloseMonitoringSocket extends AbstractSocketWrapper {
+class CloseMonitoringSocket extends AbstractSocketWrapper
+{
 
-	private boolean closed = false;
-	private final ISocketListener spyListener;
-	private final ISocketEventSource source;
-	private Socket wrappedSocket;
+   private boolean closed = false;
+   private final ISocketListener spyListener;
+   private final ISocketEventSource source;
+   private Socket wrappedSocket;
 
-	public CloseMonitoringSocket(Socket toWrap, ISocketListener spyListener, ISocketEventSource source) {
-		super(toWrap);
-		this.spyListener = spyListener;
-		this.source = source;
-	}
+   public CloseMonitoringSocket(Socket toWrap, ISocketListener spyListener, ISocketEventSource source)
+   {
+      super(toWrap);
+      this.spyListener = spyListener;
+      this.source = source;
+   }
 
-	public synchronized void close() throws IOException {
-		if (!closed) {
-			closed = true;
+   public synchronized void close() throws IOException
+   {
+      if (!closed)
+      {
+         closed = true;
 
-			try {
-				Trace.trace(Activator.PLUGIN_ID, "closing socket " + this.toString()); //$NON-NLS-1$
-				super.close();
-			} finally {
-				fireEvent(new SocketClosedEvent(source, getSocket(), (wrappedSocket != null ? wrappedSocket : this)));
-			}
-		}
-	}
+         try
+         {
+            Trace.trace(Activator.PLUGIN_ID, "closing socket " + this.toString()); //$NON-NLS-1$
+            super.close();
+         }
+         finally
+         {
+            fireEvent(new SocketClosedEvent(source, getSocket(), (wrappedSocket != null ? wrappedSocket : this)));
+         }
+      }
+   }
 
-	private void fireEvent(ISocketEvent event) {
-		if (spyListener != null) {
-			spyListener.handleSocketEvent(event);
-		}
-		event.getSource().fireEvent(event);
-	}
+   private void fireEvent(ISocketEvent event)
+   {
+      if (spyListener != null)
+      {
+         spyListener.handleSocketEvent(event);
+      }
+      event.getSource().fireEvent(event);
+   }
 
-	public boolean isSecure() {
-		return getSocket() instanceof SSLSocket;
-	}
+   public boolean isSecure()
+   {
+      return getSocket() instanceof SSLSocket;
+   }
 
-	Socket getWrappedSocket() {
-		return wrappedSocket;
-	}
+   Socket getWrappedSocket()
+   {
+      return wrappedSocket;
+   }
 
-	void setWrappedSocket(Socket wrappedSocket) {
-		this.wrappedSocket = wrappedSocket;
-	}
+   void setWrappedSocket(Socket wrappedSocket)
+   {
+      this.wrappedSocket = wrappedSocket;
+   }
 
 }
