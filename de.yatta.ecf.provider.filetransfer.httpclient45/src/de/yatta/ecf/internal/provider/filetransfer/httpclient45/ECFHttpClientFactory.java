@@ -183,7 +183,7 @@ public class ECFHttpClientFactory implements IHttpClientFactory
                Trace.catching(Activator.PLUGIN_ID, DebugOptions.EXCEPTIONS_CATCHING, HttpClientRetrieveFileTransfer.class, "getDnsHostName", e); //$NON-NLS-1$
             }
          }
-         defaultValue = value;
+         return value;
       }
       return defaultValue;
    }
@@ -216,7 +216,7 @@ public class ECFHttpClientFactory implements IHttpClientFactory
          String[] supportedCipherSuites = split(systemCipherSuites);
          HostnameVerifier hostnameVerifierCopy = new DefaultHostnameVerifier(publicSuffixMatcherCopy);
          SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(
-               (SSLSocketFactory)SSLSocketFactory.getDefault(),
+               sslSocketFactory,
                supportedProtocols, supportedCipherSuites, hostnameVerifierCopy);
          builder.setSSLSocketFactory(sslConnectionSocketFactory);
       }
@@ -252,6 +252,10 @@ public class ECFHttpClientFactory implements IHttpClientFactory
          for (WeakReference<CloseableHttpClient> clientRef : trackedClients)
          {
             CloseableHttpClient client = clientRef.get();
+            if (client == null)
+            {
+               continue;
+            }
             try
             {
                client.close();
