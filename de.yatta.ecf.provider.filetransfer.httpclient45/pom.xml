@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+   <parent>
+      <groupId>de.yatta.eclipse.launcher</groupId>
+      <artifactId>de.yatta.eclipse.launcher-eclipse-plugin</artifactId>
+      <version>1.3.35-SNAPSHOT</version>
+      <relativePath>../de.yatta.eclipse.launcher-parent/eclipse-plugin/pom.xml</relativePath>
+   </parent>
+   <artifactId>de.yatta.ecf.provider.filetransfer.httpclient45</artifactId>
+   <packaging>eclipse-plugin</packaging>
+
+   <build>
+      <plugins>
+         <plugin>
+            <groupId>org.eclipse.tycho</groupId>
+            <artifactId>target-platform-configuration</artifactId>
+            <configuration>
+               <dependency-resolution>
+                  <!-- required for org.eclipse.ecf.provider.filetransfer with org.eclipse.core.net.proxy support -->
+                  <!-- I don't think this is needed anymore. launcher.oomph-feature has a hard requirement on core.net.proxy -->
+                  <!-- <optionalDependencies>require</optionalDependencies> -->
+                  <extraRequirements  combine.children="append">
+                     <!-- extra requirement for org.osgi.service.component.annotations compile-time support -->
+                     <requirement>
+                        <type>p2-installable-unit</type>
+                        <id>org.eclipse.osgi.services</id>
+                        <versionRange>3.6.0</versionRange>
+                     </requirement>
+                  </extraRequirements>
+               </dependency-resolution>
+            </configuration>
+         </plugin>
+      </plugins>
+   </build>
+</project>

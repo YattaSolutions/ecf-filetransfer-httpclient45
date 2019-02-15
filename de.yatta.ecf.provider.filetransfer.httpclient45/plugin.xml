@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ecf.provider.filetransfer.retrieveFileTransferProtocolFactory">
+      <retrieveFileTransferProtocolFactory
+            class="de.yatta.ecf.provider.filetransfer.httpclient45.HttpClientRetrieveFileTransferFactory"
+            protocol="http"
+            priority="10">
+      </retrieveFileTransferProtocolFactory>
+      <retrieveFileTransferProtocolFactory
+            class="de.yatta.ecf.provider.filetransfer.httpclient45.HttpClientRetrieveFileTransferFactory"
+            protocol="https"
+            priority="10">
+      </retrieveFileTransferProtocolFactory>
+   </extension>
+
+   <extension
+         point="org.eclipse.ecf.provider.filetransfer.browseFileTransferProtocolFactory">
+      <browseFileTransferProtocolFactory
+            class="de.yatta.ecf.provider.filetransfer.httpclient45.HttpClientBrowseFileTransferFactory"
+            protocol="http"
+            priority="10">
+      </browseFileTransferProtocolFactory>
+      <browseFileTransferProtocolFactory
+            class="de.yatta.ecf.provider.filetransfer.httpclient45.HttpClientBrowseFileTransferFactory"
+            protocol="https"
+            priority="10">
+      </browseFileTransferProtocolFactory>
+    </extension>
+
+</plugin>
