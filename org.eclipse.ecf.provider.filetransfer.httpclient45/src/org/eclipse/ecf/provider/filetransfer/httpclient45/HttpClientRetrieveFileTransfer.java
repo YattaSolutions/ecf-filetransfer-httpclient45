@@ -11,7 +11,7 @@
  *  Henrich Kraemer - bug 263613, [transport] Update site contacting / downloading is not cancelable
  *  Thomas Joiner - HttpClient 4 implementation
  ******************************************************************************/
-package de.yatta.ecf.provider.filetransfer.httpclient45;
+package org.eclipse.ecf.provider.filetransfer.httpclient45;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -72,12 +72,12 @@ import org.eclipse.ecf.provider.filetransfer.util.JREProxyHelper;
 import org.eclipse.ecf.provider.filetransfer.util.ProxySetupHelper;
 import org.eclipse.osgi.util.NLS;
 
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.Activator;
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.ECFHttpClientFactory;
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.HttpClientProxyCredentialProvider;
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.IHttpClientFactory;
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.Messages;
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.NTLMProxyDetector;
+import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.Activator;
+import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.ECFHttpClientFactory;
+import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.HttpClientProxyCredentialProvider;
+import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.IHttpClientFactory;
+import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.Messages;
+import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.NTLMProxyDetector;
 
 public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
 {
@@ -188,7 +188,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
    /*
     * (non-Javadoc)
     *
-    * @see de.yatta.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#hardClose()
+    * @see org.eclipse.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#hardClose()
     */
    @Override
    protected void hardClose()
@@ -643,7 +643,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
    }
 
    /* (non-Javadoc)
-    * @see de.yatta.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#openStreams()
+    * @see org.eclipse.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#openStreams()
     */
    @Override
    protected void openStreams() throws IncomingFileTransferException
@@ -946,7 +946,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
    /*
     * (non-Javadoc)
     *
-    * @see de.yatta.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#doPause()
+    * @see org.eclipse.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#doPause()
     */
    @Override
    protected boolean doPause()
@@ -962,7 +962,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
    /*
     * (non-Javadoc)
     *
-    * @see de.yatta.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#doResume()
+    * @see org.eclipse.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#doResume()
     */
    @Override
    protected boolean doResume()
@@ -1121,7 +1121,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
    /*
     * (non-Javadoc)
     *
-    * @see de.yatta.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#getAdapter(java.lang.Class)
+    * @see org.eclipse.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#getAdapter(java.lang.Class)
     */
    @Override
    public Object getAdapter(@SuppressWarnings("rawtypes") Class adapter)
@@ -1138,7 +1138,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
    }
 
    /* (non-Javadoc)
-    * @see de.yatta.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#setupProxy(org.eclipse.ecf.core.util.Proxy)
+    * @see org.eclipse.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer#setupProxy(org.eclipse.ecf.core.util.Proxy)
     */
    @Override
    protected void setupProxy(Proxy proxy)

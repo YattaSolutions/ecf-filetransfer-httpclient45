@@ -1,4 +1,4 @@
-package de.yatta.ecf.internal.provider.filetransfer.httpclient45;
+package org.eclipse.ecf.internal.provider.filetransfer.httpclient45;
 
 import java.util.Map;
 

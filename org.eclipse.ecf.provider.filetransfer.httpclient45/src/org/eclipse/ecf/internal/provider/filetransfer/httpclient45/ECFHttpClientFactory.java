@@ -1,4 +1,4 @@
-package de.yatta.ecf.internal.provider.filetransfer.httpclient45;
+package org.eclipse.ecf.internal.provider.filetransfer.httpclient45;
 
 import java.io.IOException;
 import java.lang.ref.Reference;
@@ -39,8 +39,8 @@ import org.eclipse.ecf.internal.provider.filetransfer.DebugOptions;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 
-import de.yatta.ecf.provider.filetransfer.httpclient45.HttpClientOptions;
-import de.yatta.ecf.provider.filetransfer.httpclient45.HttpClientRetrieveFileTransfer;
+import org.eclipse.ecf.provider.filetransfer.httpclient45.HttpClientOptions;
+import org.eclipse.ecf.provider.filetransfer.httpclient45.HttpClientRetrieveFileTransfer;
 
 @Component
 public class ECFHttpClientFactory implements IHttpClientFactory

@@ -9,7 +9,7 @@
  *     IBM Corporation - initial API and implementation
  *     Thomas Joiner - HttpClient 4 implementation
  *******************************************************************************/
-package de.yatta.ecf.internal.provider.filetransfer.httpclient45;
+package org.eclipse.ecf.internal.provider.filetransfer.httpclient45;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -25,7 +25,7 @@ import org.eclipse.ecf.core.util.Trace;
 import org.eclipse.ecf.internal.provider.filetransfer.DebugOptions;
 import org.osgi.framework.FrameworkUtil;
 
-import de.yatta.ecf.provider.filetransfer.httpclient45.HttpClientRetrieveFileTransfer;
+import org.eclipse.ecf.provider.filetransfer.httpclient45.HttpClientRetrieveFileTransfer;
 
 public class HttpClientProxyCredentialProvider extends BasicCredentialsProvider
 {

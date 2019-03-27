@@ -9,7 +9,7 @@
  *    Composent, Inc. - initial API and implementation
  *****************************************************************************/
 
-package de.yatta.ecf.internal.provider.filetransfer.httpclient45;
+package org.eclipse.ecf.internal.provider.filetransfer.httpclient45;
 
 import org.eclipse.osgi.util.NLS;
 
@@ -17,7 +17,7 @@ import org.eclipse.osgi.util.NLS;
  * 
  */
 public class Messages extends NLS {
-	private static final String BUNDLE_NAME = "de.yatta.ecf.internal.provider.filetransfer.httpclient45.messages"; //$NON-NLS-1$
+	private static final String BUNDLE_NAME = "org.eclipse.ecf.internal.provider.filetransfer.httpclient45.messages"; //$NON-NLS-1$
 	public static String FileTransferNamespace_Http_Protocol;
 	public static String FileTransferNamespace_Https_Protocol;
 	public static String HttpClientRetrieveFileTransfer_CONNECTING_JOB_NAME;

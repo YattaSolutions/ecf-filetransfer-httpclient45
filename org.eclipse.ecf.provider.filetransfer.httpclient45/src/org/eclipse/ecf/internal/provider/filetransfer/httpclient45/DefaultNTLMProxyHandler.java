@@ -1,4 +1,4 @@
-package de.yatta.ecf.internal.provider.filetransfer.httpclient45;
+package org.eclipse.ecf.internal.provider.filetransfer.httpclient45;
 
 import java.util.Map;
 
@@ -7,7 +7,7 @@ import org.eclipse.ecf.core.util.Proxy;
 import org.eclipse.ecf.filetransfer.BrowseFileTransferException;
 import org.eclipse.ecf.filetransfer.IncomingFileTransferException;
 
-import de.yatta.ecf.provider.filetransfer.httpclient45.HttpClientOptions;
+import org.eclipse.ecf.provider.filetransfer.httpclient45.HttpClientOptions;
 
 public class DefaultNTLMProxyHandler implements INTLMProxyHandler
 {

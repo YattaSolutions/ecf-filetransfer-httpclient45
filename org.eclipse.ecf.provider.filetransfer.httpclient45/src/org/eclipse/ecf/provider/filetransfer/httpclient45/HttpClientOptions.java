@@ -1,4 +1,4 @@
-package de.yatta.ecf.provider.filetransfer.httpclient45;
+package org.eclipse.ecf.provider.filetransfer.httpclient45;
 
 /**
  * @see org.eclipse.ecf.provider.filetransfer.httpclient4.HttpClientOptions

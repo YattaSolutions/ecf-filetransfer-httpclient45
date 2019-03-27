@@ -4,12 +4,12 @@
    <extension
          point="org.eclipse.ecf.provider.filetransfer.retrieveFileTransferProtocolFactory">
       <retrieveFileTransferProtocolFactory
-            class="de.yatta.ecf.provider.filetransfer.httpclient45.HttpClientRetrieveFileTransferFactory"
+            class="org.eclipse.ecf.provider.filetransfer.httpclient45.HttpClientRetrieveFileTransferFactory"
             protocol="http"
             priority="10">
       </retrieveFileTransferProtocolFactory>
       <retrieveFileTransferProtocolFactory
-            class="de.yatta.ecf.provider.filetransfer.httpclient45.HttpClientRetrieveFileTransferFactory"
+            class="org.eclipse.ecf.provider.filetransfer.httpclient45.HttpClientRetrieveFileTransferFactory"
             protocol="https"
             priority="10">
       </retrieveFileTransferProtocolFactory>
@@ -18,12 +18,12 @@
    <extension
          point="org.eclipse.ecf.provider.filetransfer.browseFileTransferProtocolFactory">
       <browseFileTransferProtocolFactory
-            class="de.yatta.ecf.provider.filetransfer.httpclient45.HttpClientBrowseFileTransferFactory"
+            class="org.eclipse.ecf.provider.filetransfer.httpclient45.HttpClientBrowseFileTransferFactory"
             protocol="http"
             priority="10">
       </browseFileTransferProtocolFactory>
       <browseFileTransferProtocolFactory
-            class="de.yatta.ecf.provider.filetransfer.httpclient45.HttpClientBrowseFileTransferFactory"
+            class="org.eclipse.ecf.provider.filetransfer.httpclient45.HttpClientBrowseFileTransferFactory"
             protocol="https"
             priority="10">
       </browseFileTransferProtocolFactory>

@@ -1,4 +1,4 @@
-package de.yatta.ecf.internal.provider.filetransfer.httpclient45.win32;
+package org.eclipse.ecf.internal.provider.filetransfer.httpclient45.win32;
 
 import com.sun.jna.platform.win32.Sspi;
 
@@ -25,13 +25,13 @@ import org.osgi.framework.FrameworkUtil;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.HttpClientModifierAdapter;
+import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.HttpClientModifierAdapter;
 
 @Component
 public class Win32HttpClientConfigurationModifier extends HttpClientModifierAdapter
 {
 
-   public static final String ID = "de.yatta.ecf.provider.filetransfer.httpclient45.win32"; //$NON-NLS-1$
+   public static final String ID = "org.eclipse.ecf.provider.filetransfer.httpclient45.win32"; //$NON-NLS-1$
 
    public static final String SERVICE_PRINCIPAL_NAME_ATTRIBUTE = "servicePrincipal"; //$NON-NLS-1$
 

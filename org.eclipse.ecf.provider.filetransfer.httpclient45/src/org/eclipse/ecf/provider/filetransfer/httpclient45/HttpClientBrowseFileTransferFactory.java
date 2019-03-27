@@ -9,7 +9,7 @@
  *    Composent, Inc. - initial API and implementation
  *    Thomas Joiner - HttpClient 4 implementation
  *****************************************************************************/
-package de.yatta.ecf.provider.filetransfer.httpclient45;
+package org.eclipse.ecf.provider.filetransfer.httpclient45;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -28,7 +28,7 @@ import org.eclipse.ecf.filetransfer.service.IRemoteFileSystemBrowserFactory;
 import org.eclipse.ecf.provider.filetransfer.identity.FileTransferNamespace;
 import org.eclipse.osgi.util.NLS;
 
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.Activator;
+import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.Activator;
 
 public class HttpClientBrowseFileTransferFactory implements IRemoteFileSystemBrowserFactory
 {

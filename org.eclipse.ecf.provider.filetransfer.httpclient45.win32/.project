@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>de.yatta.ecf.provider.filetransfer.httpclient45.win32</name>
+	<name>org.eclipse.ecf.provider.filetransfer.httpclient45.win32</name>
 	<comment></comment>
 	<projects>
 	</projects>

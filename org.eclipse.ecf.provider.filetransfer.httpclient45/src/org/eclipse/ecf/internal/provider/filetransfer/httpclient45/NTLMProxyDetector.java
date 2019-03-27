@@ -8,7 +8,7 @@
 *   EclipseSource - initial API and implementation
 *   Thomas Joiner - changed to work with HttpClient 4.1 and added SPNEGO detection
 ******************************************************************************/
-package de.yatta.ecf.internal.provider.filetransfer.httpclient45;
+package org.eclipse.ecf.internal.provider.filetransfer.httpclient45;
 
 import org.apache.http.auth.AuthScheme;
 import org.apache.http.auth.AuthState;

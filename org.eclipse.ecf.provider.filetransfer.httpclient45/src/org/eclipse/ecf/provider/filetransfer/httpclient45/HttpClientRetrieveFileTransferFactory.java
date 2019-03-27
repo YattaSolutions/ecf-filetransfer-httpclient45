@@ -9,12 +9,12 @@
  *    Composent, Inc. - initial API and implementation
  *    Thomas Joiner - HttpClient 4 implementation
  *****************************************************************************/
-package de.yatta.ecf.provider.filetransfer.httpclient45;
+package org.eclipse.ecf.provider.filetransfer.httpclient45;
 
 import org.eclipse.ecf.filetransfer.service.IRetrieveFileTransfer;
 import org.eclipse.ecf.filetransfer.service.IRetrieveFileTransferFactory;
 
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.Activator;
+import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.Activator;
 
 public class HttpClientRetrieveFileTransferFactory implements IRetrieveFileTransferFactory
 {

@@ -8,7 +8,7 @@
  * Contributors:
  *    Chris Aniszczyk - initial API and implementation
  *****************************************************************************/
-package de.yatta.ecf.internal.provider.filetransfer.httpclient45;
+package org.eclipse.ecf.internal.provider.filetransfer.httpclient45;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,7 +40,7 @@ import org.osgi.service.log.LogService;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.ECFHttpClientFactory.ModifierRunner;
+import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.ECFHttpClientFactory.ModifierRunner;
 
 /**
  * The activator class controls the plug-in life cycle
@@ -112,7 +112,7 @@ public class Activator implements BundleActivator
    }
 
    // The plug-in ID
-   public static final String PLUGIN_ID = "de.yatta.ecf.provider.filetransfer.httpclient45"; //$NON-NLS-1$
+   public static final String PLUGIN_ID = "org.eclipse.ecf.provider.filetransfer.httpclient45"; //$NON-NLS-1$
 
    // The shared instance
    private static Activator plugin;

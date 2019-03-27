@@ -11,7 +11,7 @@
  *    Thomas Joiner - HttpClient 4 implementation
  *****************************************************************************/
 
-package de.yatta.ecf.provider.filetransfer.httpclient45;
+package org.eclipse.ecf.provider.filetransfer.httpclient45;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -54,14 +54,14 @@ import org.eclipse.ecf.provider.filetransfer.util.JREProxyHelper;
 import org.eclipse.ecf.provider.filetransfer.util.ProxySetupHelper;
 import org.eclipse.osgi.util.NLS;
 
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.Activator;
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.DefaultNTLMProxyHandler;
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.ECFHttpClientFactory;
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.HttpClientProxyCredentialProvider;
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.IHttpClientFactory;
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.INTLMProxyHandler;
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.Messages;
-import de.yatta.ecf.internal.provider.filetransfer.httpclient45.NTLMProxyDetector;
+import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.Activator;
+import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.DefaultNTLMProxyHandler;
+import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.ECFHttpClientFactory;
+import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.HttpClientProxyCredentialProvider;
+import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.IHttpClientFactory;
+import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.INTLMProxyHandler;
+import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.Messages;
+import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.NTLMProxyDetector;
 
 /**
  *
@@ -235,7 +235,7 @@ public class HttpClientFileSystemBrowser extends AbstractFileSystemBrowser
    }
 
    /* (non-Javadoc)
-    * @see de.yatta.ecf.provider.filetransfer.browse.AbstractFileSystemBrowser#runRequest()
+    * @see org.eclipse.ecf.provider.filetransfer.browse.AbstractFileSystemBrowser#runRequest()
     */
    @Override
    protected void runRequest() throws Exception
