@@ -6,13 +6,12 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.HttpClientBuilder;
 
-public interface IHttpClientFactory
-{
+public interface IHttpClientFactory {
 
-   HttpClientBuilder newClient();
+	HttpClientBuilder newClient();
 
-   HttpClientContext newClientContext();
+	HttpClientContext newClientContext();
 
-   RequestConfig.Builder newRequestConfig(HttpClientContext context, Map<?, ?> localOptions);
+	RequestConfig.Builder newRequestConfig(HttpClientContext context, Map<?, ?> localOptions);
 
 }

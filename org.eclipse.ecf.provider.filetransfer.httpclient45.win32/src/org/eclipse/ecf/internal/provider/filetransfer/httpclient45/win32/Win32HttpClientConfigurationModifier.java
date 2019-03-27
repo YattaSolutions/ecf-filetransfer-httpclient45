@@ -28,149 +28,122 @@ import org.osgi.service.component.annotations.Component;
 import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.HttpClientModifierAdapter;
 
 @Component
-public class Win32HttpClientConfigurationModifier extends HttpClientModifierAdapter
-{
+public class Win32HttpClientConfigurationModifier extends HttpClientModifierAdapter {
 
-   public static final String ID = "org.eclipse.ecf.provider.filetransfer.httpclient45.win32"; //$NON-NLS-1$
+	public static final String ID = "org.eclipse.ecf.provider.filetransfer.httpclient45.win32"; //$NON-NLS-1$
 
-   public static final String SERVICE_PRINCIPAL_NAME_ATTRIBUTE = "servicePrincipal"; //$NON-NLS-1$
+	public static final String SERVICE_PRINCIPAL_NAME_ATTRIBUTE = "servicePrincipal"; //$NON-NLS-1$
 
-   public static final String SERVICE_PRINCIPAL_NAME_PROPERTY = ID + "." + SERVICE_PRINCIPAL_NAME_ATTRIBUTE; //$NON-NLS-1$
+	public static final String SERVICE_PRINCIPAL_NAME_PROPERTY = ID + "." + SERVICE_PRINCIPAL_NAME_ATTRIBUTE; //$NON-NLS-1$
 
-   private static Boolean winAuthAvailable;
+	private static Boolean winAuthAvailable;
 
-   private String servicePrincipalName;
+	private String servicePrincipalName;
 
-   public static boolean isWinAuthAvailable()
-   {
-      if (winAuthAvailable == null)
-      {
-         //from org.apache.http.impl.client.WinHttpClients.isWinAuthAvailable()
-         try
-         {
-            winAuthAvailable = Sspi.MAX_TOKEN_SIZE > 0;
-         }
-         catch (Exception ignore)
-         { // Likely ClassNotFound
-            winAuthAvailable = false;
-         }
-      }
-      return winAuthAvailable;
-   }
+	public static boolean isWinAuthAvailable() {
+		if (winAuthAvailable == null) {
+			// from org.apache.http.impl.client.WinHttpClients.isWinAuthAvailable()
+			try {
+				winAuthAvailable = Sspi.MAX_TOKEN_SIZE > 0;
+			} catch (Exception ignore) { // Likely ClassNotFound
+				winAuthAvailable = false;
+			}
+		}
+		return winAuthAvailable;
+	}
 
-   @Override
-   public HttpClientBuilder modifyClient(HttpClientBuilder builder)
-   {
-      if (!isWinAuthAvailable())
-      {
-         return builder;
-      }
-      HttpClientBuilder winBuilder = builder == null ? HttpClientBuilder.create() : builder;
-      Lookup<AuthSchemeProvider> authSchemeRegistry = createAuthSchemeRegistry();
-      return winBuilder.setDefaultAuthSchemeRegistry(authSchemeRegistry);
-   }
+	@Override
+	public HttpClientBuilder modifyClient(HttpClientBuilder builder) {
+		if (!isWinAuthAvailable()) {
+			return builder;
+		}
+		HttpClientBuilder winBuilder = builder == null ? HttpClientBuilder.create() : builder;
+		Lookup<AuthSchemeProvider> authSchemeRegistry = createAuthSchemeRegistry();
+		return winBuilder.setDefaultAuthSchemeRegistry(authSchemeRegistry);
+	}
 
-   @Override
-   @SuppressWarnings("restriction")
-   public CredentialsProvider modifyCredentialsProvider(CredentialsProvider credentialsProvider)
-   {
-      if (credentialsProvider == null || !isWinAuthAvailable() || credentialsProvider instanceof WindowsCredentialsProvider)
-      {
-         return credentialsProvider;
-      }
+	@Override
+	@SuppressWarnings("restriction")
+	public CredentialsProvider modifyCredentialsProvider(CredentialsProvider credentialsProvider) {
+		if (credentialsProvider == null || !isWinAuthAvailable()
+				|| credentialsProvider instanceof WindowsCredentialsProvider) {
+			return credentialsProvider;
+		}
 
-      CredentialsProvider winCredentialsProvider = new WindowsCredentialsProvider(credentialsProvider);
-      return winCredentialsProvider;
-   }
+		CredentialsProvider winCredentialsProvider = new WindowsCredentialsProvider(credentialsProvider);
+		return winCredentialsProvider;
+	}
 
-   @Override
-   public HttpClientContext modifyContext(HttpClientContext context)
-   {
-      Lookup<AuthSchemeProvider> authSchemeRegistry = context.getAuthSchemeRegistry();
-      if (authSchemeRegistry == null)
-      {
-         authSchemeRegistry = createAuthSchemeRegistry();
-      }
-      else
-      {
-         authSchemeRegistry = modifyAuthSchemeRegistry(authSchemeRegistry);
-      }
-      context.setAuthSchemeRegistry(authSchemeRegistry);
-      return context;
-   }
+	@Override
+	public HttpClientContext modifyContext(HttpClientContext context) {
+		Lookup<AuthSchemeProvider> authSchemeRegistry = context.getAuthSchemeRegistry();
+		if (authSchemeRegistry == null) {
+			authSchemeRegistry = createAuthSchemeRegistry();
+		} else {
+			authSchemeRegistry = modifyAuthSchemeRegistry(authSchemeRegistry);
+		}
+		context.setAuthSchemeRegistry(authSchemeRegistry);
+		return context;
+	}
 
-   public void setServicePrincipalName(String servicePrincipalName)
-   {
-      this.servicePrincipalName = servicePrincipalName;
-   }
+	public void setServicePrincipalName(String servicePrincipalName) {
+		this.servicePrincipalName = servicePrincipalName;
+	}
 
-   public String getServicePrincipalName()
-   {
-      return servicePrincipalName;
-   }
+	public String getServicePrincipalName() {
+		return servicePrincipalName;
+	}
 
-   private Lookup<AuthSchemeProvider> createAuthSchemeRegistry()
-   {
-      Registry<AuthSchemeProvider> authSchemeRegistry = setWinAuthSchemes(RegistryBuilder.<AuthSchemeProvider> create()
-            .register(AuthSchemes.BASIC, new BasicSchemeFactory())
-            .register(AuthSchemes.DIGEST, new DigestSchemeFactory())
-            .register(AuthSchemes.KERBEROS, new KerberosSchemeFactory()))
-                  .build();
-      return authSchemeRegistry;
-   }
+	private Lookup<AuthSchemeProvider> createAuthSchemeRegistry() {
+		Registry<AuthSchemeProvider> authSchemeRegistry = setWinAuthSchemes(
+				RegistryBuilder.<AuthSchemeProvider>create().register(AuthSchemes.BASIC, new BasicSchemeFactory())
+						.register(AuthSchemes.DIGEST, new DigestSchemeFactory())
+						.register(AuthSchemes.KERBEROS, new KerberosSchemeFactory())).build();
+		return authSchemeRegistry;
+	}
 
-   private Lookup<AuthSchemeProvider> modifyAuthSchemeRegistry(Lookup<AuthSchemeProvider> authSchemeRegistry)
-   {
-      RegistryBuilder<AuthSchemeProvider> builder = RegistryBuilder.create();
-      for (String scheme : new String[] { AuthSchemes.BASIC, AuthSchemes.DIGEST, AuthSchemes.KERBEROS })
-      {
-         AuthSchemeProvider provider = authSchemeRegistry.lookup(scheme);
-         if (provider != null)
-         {
-            builder.register(scheme, provider);
-         }
-      }
-      if (authSchemeRegistry.lookup(AuthSchemes.KERBEROS) == null)
-      {
-         builder.register(AuthSchemes.KERBEROS, new KerberosSchemeFactory());
-      }
-      setWinAuthSchemes(builder);
-      return builder.build();
-   }
+	private Lookup<AuthSchemeProvider> modifyAuthSchemeRegistry(Lookup<AuthSchemeProvider> authSchemeRegistry) {
+		RegistryBuilder<AuthSchemeProvider> builder = RegistryBuilder.create();
+		for (String scheme : new String[] { AuthSchemes.BASIC, AuthSchemes.DIGEST, AuthSchemes.KERBEROS }) {
+			AuthSchemeProvider provider = authSchemeRegistry.lookup(scheme);
+			if (provider != null) {
+				builder.register(scheme, provider);
+			}
+		}
+		if (authSchemeRegistry.lookup(AuthSchemes.KERBEROS) == null) {
+			builder.register(AuthSchemes.KERBEROS, new KerberosSchemeFactory());
+		}
+		setWinAuthSchemes(builder);
+		return builder.build();
+	}
 
-   @SuppressWarnings("restriction")
-   private RegistryBuilder<AuthSchemeProvider> setWinAuthSchemes(RegistryBuilder<AuthSchemeProvider> builder)
-   {
-      return builder.register(AuthSchemes.NTLM, new WindowsNTLMSchemeFactory(servicePrincipalName))
-            .register(AuthSchemes.SPNEGO, new WindowsNegotiateSchemeFactory(servicePrincipalName));
-   }
+	@SuppressWarnings("restriction")
+	private RegistryBuilder<AuthSchemeProvider> setWinAuthSchemes(RegistryBuilder<AuthSchemeProvider> builder) {
+		return builder.register(AuthSchemes.NTLM, new WindowsNTLMSchemeFactory(servicePrincipalName))
+				.register(AuthSchemes.SPNEGO, new WindowsNegotiateSchemeFactory(servicePrincipalName));
+	}
 
-   @Activate
-   public synchronized void activate(BundleContext context, Map<?, ?> properties)
-   {
-      this.servicePrincipalName = getServicePrincipalName(properties);
-   }
+	@Activate
+	public synchronized void activate(BundleContext context, Map<?, ?> properties) {
+		this.servicePrincipalName = getServicePrincipalName(properties);
+	}
 
-   private String getServicePrincipalName(Map<?, ?> properties)
-   {
-      Object servicePrincipalValue = properties.get(SERVICE_PRINCIPAL_NAME_ATTRIBUTE);
-      if (servicePrincipalValue != null)
-      {
-         return servicePrincipalValue.toString();
-      }
-      Bundle bundle = FrameworkUtil.getBundle(this.getClass());
-      if (bundle != null)
-      {
-         return bundle.getBundleContext().getProperty(SERVICE_PRINCIPAL_NAME_PROPERTY);
-      }
-      return System.getProperty(SERVICE_PRINCIPAL_NAME_PROPERTY);
-   }
+	private String getServicePrincipalName(Map<?, ?> properties) {
+		Object servicePrincipalValue = properties.get(SERVICE_PRINCIPAL_NAME_ATTRIBUTE);
+		if (servicePrincipalValue != null) {
+			return servicePrincipalValue.toString();
+		}
+		Bundle bundle = FrameworkUtil.getBundle(this.getClass());
+		if (bundle != null) {
+			return bundle.getBundleContext().getProperty(SERVICE_PRINCIPAL_NAME_PROPERTY);
+		}
+		return System.getProperty(SERVICE_PRINCIPAL_NAME_PROPERTY);
+	}
 
-   @Override
-   public Builder modifyRequestConfig(Builder config, HttpClientContext context, Map<?, ?> options)
-   {
-      // TODO Auto-generated method stub
-      return null;
-   }
+	@Override
+	public Builder modifyRequestConfig(Builder config, HttpClientContext context, Map<?, ?> options) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }

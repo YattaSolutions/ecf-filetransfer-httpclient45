@@ -8,6 +8,7 @@
  * Contributors:
  *    Composent, Inc. - initial API and implementation
  *    Thomas Joiner - HttpClient 4 implementation
+ *    Yatta Solutions - HttpClient 4.5 implementation
  *****************************************************************************/
 package org.eclipse.ecf.provider.filetransfer.httpclient45;
 
@@ -16,12 +17,10 @@ import org.eclipse.ecf.filetransfer.service.IRetrieveFileTransferFactory;
 
 import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.Activator;
 
-public class HttpClientRetrieveFileTransferFactory implements IRetrieveFileTransferFactory
-{
+public class HttpClientRetrieveFileTransferFactory implements IRetrieveFileTransferFactory {
 
-   @Override
-   public IRetrieveFileTransfer newInstance()
-   {
-      return new HttpClientRetrieveFileTransfer(Activator.getDefault().getRetrieveHttpClient());
-   }
+	@Override
+	public IRetrieveFileTransfer newInstance() {
+		return new HttpClientRetrieveFileTransfer(Activator.getDefault().getRetrieveHttpClient());
+	}
 }

@@ -8,12 +8,12 @@
  * Contributors:
  *    Composent, Inc. - initial API and implementation
  *    Thomas Joiner - HttpClient 4 implementation
+ *    Yatta Solutions - HttpClient 4.5 implementation
  *****************************************************************************/
 package org.eclipse.ecf.provider.filetransfer.httpclient45;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.ecf.core.identity.IDFactory;
 import org.eclipse.ecf.core.identity.Namespace;
@@ -25,66 +25,55 @@ import org.eclipse.ecf.filetransfer.RemoteFileSystemException;
 import org.eclipse.ecf.filetransfer.identity.IFileID;
 import org.eclipse.ecf.filetransfer.service.IRemoteFileSystemBrowser;
 import org.eclipse.ecf.filetransfer.service.IRemoteFileSystemBrowserFactory;
+import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.Activator;
 import org.eclipse.ecf.provider.filetransfer.identity.FileTransferNamespace;
 import org.eclipse.osgi.util.NLS;
 
-import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.Activator;
+public class HttpClientBrowseFileTransferFactory implements IRemoteFileSystemBrowserFactory {
 
-public class HttpClientBrowseFileTransferFactory implements IRemoteFileSystemBrowserFactory
-{
+	@Override
+	public IRemoteFileSystemBrowser newInstance() {
+		return new IRemoteFileSystemBrowser() {
 
-   @Override
-   public IRemoteFileSystemBrowser newInstance()
-   {
-      return new IRemoteFileSystemBrowser() {
+			private Proxy proxy;
+			private IConnectContext connectContext;
 
-         private Proxy proxy;
-         private IConnectContext connectContext;
+			@Override
+			public Namespace getBrowseNamespace() {
+				return IDFactory.getDefault().getNamespaceByName(FileTransferNamespace.PROTOCOL);
+			}
 
-         @Override
-         public Namespace getBrowseNamespace()
-         {
-            return IDFactory.getDefault().getNamespaceByName(FileTransferNamespace.PROTOCOL);
-         }
+			@Override
+			public IRemoteFileSystemRequest sendBrowseRequest(IFileID directoryOrFileId, IRemoteFileSystemListener listener) throws RemoteFileSystemException {
+				Assert.isNotNull(directoryOrFileId);
+				Assert.isNotNull(listener);
+				URL url;
+				try {
+					url = directoryOrFileId.getURL();
+				} catch (final MalformedURLException e) {
+					throw new RemoteFileSystemException(NLS.bind("Exception creating URL for {0}", directoryOrFileId)); //$NON-NLS-1$
+				}
 
-         @Override
-         public IRemoteFileSystemRequest sendBrowseRequest(IFileID directoryOrFileId, IRemoteFileSystemListener listener) throws RemoteFileSystemException
-         {
-            Assert.isNotNull(directoryOrFileId);
-            Assert.isNotNull(listener);
-            URL url;
-            try
-            {
-               url = directoryOrFileId.getURL();
-            }
-            catch (final MalformedURLException e)
-            {
-               throw new RemoteFileSystemException(NLS.bind("Exception creating URL for {0}", directoryOrFileId)); //$NON-NLS-1$
-            }
+				HttpClientFileSystemBrowser browser = new HttpClientFileSystemBrowser(Activator.getDefault().getBrowseHttpClient(), directoryOrFileId, listener, url, connectContext, proxy);
+				return browser.sendBrowseRequest();
+			}
 
-            HttpClientFileSystemBrowser browser = new HttpClientFileSystemBrowser(Activator.getDefault().getBrowseHttpClient(), directoryOrFileId, listener, url, connectContext, proxy);
-            return browser.sendBrowseRequest();
-         }
+			@Override
+			public void setConnectContextForAuthentication(IConnectContext connectContext) {
+				this.connectContext = connectContext;
+			}
 
-         @Override
-         public void setConnectContextForAuthentication(IConnectContext connectContext)
-         {
-            this.connectContext = connectContext;
-         }
+			@Override
+			public void setProxy(Proxy proxy) {
+				this.proxy = proxy;
+			}
 
-         @Override
-         public void setProxy(Proxy proxy)
-         {
-            this.proxy = proxy;
-         }
+			@Override
+			public <T> T getAdapter(Class<T> adapter) {
+				return null;
+			}
 
-         @Override
-         public <T> T getAdapter(Class<T> adapter)
-         {
-            return null;
-         }
+		};
 
-      };
-
-   }
+	}
 }

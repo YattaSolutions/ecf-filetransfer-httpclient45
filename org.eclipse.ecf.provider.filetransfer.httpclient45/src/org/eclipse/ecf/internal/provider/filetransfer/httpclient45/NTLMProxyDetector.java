@@ -15,61 +15,49 @@ import org.apache.http.auth.AuthState;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.protocol.HttpContext;
 
-public class NTLMProxyDetector
-{
+public class NTLMProxyDetector {
 
-   private static final String PROXY_SPNEGO_VALUE = "NEGOTIATE"; //$NON-NLS-1$
-   private static final String PROXY_NTLM_VALUE = "NTLM"; //$NON-NLS-1$
+	private static final String PROXY_SPNEGO_VALUE = "NEGOTIATE"; //$NON-NLS-1$
+	private static final String PROXY_NTLM_VALUE = "NTLM"; //$NON-NLS-1$
 
-   /**
-    * This method will detect if the request connected to a NTLM proxy
-    * given the HttpContext provided to one of the HttpClient#execute()
-    * methods.
-    * 
-    * @param context the HttpContext given to the HttpClient at execution time
-    * @return true if it connected to an NTLM proxy
-    * @since 5.0
-    */
-   public static boolean detectNTLMProxy(HttpContext context)
-   {
-      return isProxyType(context, PROXY_NTLM_VALUE);
-   }
+	/**
+	 * This method will detect if the request connected to a NTLM proxy
+	 * given the HttpContext provided to one of the HttpClient#execute()
+	 * methods.
+	 * 
+	 * @param context the HttpContext given to the HttpClient at execution time
+	 * @return true if it connected to an NTLM proxy
+	 * @since 5.0
+	 */
+	public static boolean detectNTLMProxy(HttpContext context) {
+		return isProxyType(context, PROXY_NTLM_VALUE);
+	}
 
-   private static boolean isProxyType(HttpContext context, String scheme)
-   {
-      if (context == null)
-      {
-         return false;
-      }
-      AuthState authState = (AuthState)context.getAttribute(HttpClientContext.PROXY_AUTH_STATE);
-      if (authState == null)
-      {
-         return false;
-      }
-      AuthScheme authScheme = authState.getAuthScheme();
-      if (authScheme == null)
-      {
-         return false;
-      }
-      String schemeName = authScheme.getSchemeName();
-      if (schemeName == null)
-      {
-         return false;
-      }
-      return schemeName.equalsIgnoreCase(scheme);
-   }
+	private static boolean isProxyType(HttpContext context, String scheme) {
+		if (context == null)
+			return false;
+		AuthState authState = (AuthState) context.getAttribute(HttpClientContext.PROXY_AUTH_STATE);
+		if (authState == null)
+			return false;
+		AuthScheme authScheme = authState.getAuthScheme();
+		if (authScheme == null)
+			return false;
+		String schemeName = authScheme.getSchemeName();
+		if (schemeName == null)
+			return false;
+		return schemeName.equalsIgnoreCase(scheme);
+	}
 
-   /**
-    * This method will detect if the request connected to a SPNEGO proxy
-    * given the HttpContext provided to one of the HttpClient#execute()
-    * methods.
-    * 
-    * @param context the HttpContext given to the HttpClient at execution time
-    * @return true if it connected to an SPNEGO proxy
-    * @since 5.0
-    */
-   public static boolean detectSPNEGOProxy(HttpContext context)
-   {
-      return isProxyType(context, PROXY_SPNEGO_VALUE);
-   }
+	/**
+	 * This method will detect if the request connected to a SPNEGO proxy
+	 * given the HttpContext provided to one of the HttpClient#execute()
+	 * methods.
+	 * 
+	 * @param context the HttpContext given to the HttpClient at execution time
+	 * @return true if it connected to an SPNEGO proxy
+	 * @since 5.0
+	 */
+	public static boolean detectSPNEGOProxy(HttpContext context) {
+		return isProxyType(context, PROXY_SPNEGO_VALUE);
+	}
 }

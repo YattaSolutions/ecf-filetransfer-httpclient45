@@ -7,6 +7,7 @@
  *
  * Contributors:
  *    Composent, Inc. - initial API and implementation
+ *    Yatta Solutions - HttpClient 4.5 implementation 
  *****************************************************************************/
 
 package org.eclipse.ecf.internal.provider.filetransfer.httpclient45;

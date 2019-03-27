@@ -5,11 +5,10 @@ import java.util.Map;
 import org.eclipse.ecf.core.util.ECFException;
 import org.eclipse.ecf.core.util.Proxy;
 
-public interface INTLMProxyHandler
-{
-   void handleNTLMProxy(Proxy proxy, int code) throws ECFException;
+public interface INTLMProxyHandler {
+	void handleNTLMProxy(Proxy proxy, int code) throws ECFException;
 
-   void handleSPNEGOProxy(Proxy proxy, int code) throws ECFException;
+	void handleSPNEGOProxy(Proxy proxy, int code) throws ECFException;
 
-   boolean allowNTLMAuthentication(Map<?, ?> connectOptions);
+	boolean allowNTLMAuthentication(Map<?, ?> connectOptions);
 }
