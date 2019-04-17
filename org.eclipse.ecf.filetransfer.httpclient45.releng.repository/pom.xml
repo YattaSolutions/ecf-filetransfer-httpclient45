@@ -9,24 +9,25 @@
     <relativePath>../</relativePath>
   </parent>
   <groupId>org.eclipse.ecf</groupId>
-  <artifactId>org.eclipse.ecf.provider.filetransfer.httpclient45.win32</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
-  <packaging>eclipse-plugin</packaging>
+  <artifactId>org.eclipse.ecf.filetransfer.httpclient45.releng.repository</artifactId>
+  <packaging>eclipse-repository</packaging>
+
+  <name>ECF HttpClient 4.5 Provider p2 Repository</name>
 
   <build>
     <plugins>
       <plugin>
-        <groupId>org.eclipse.tycho</groupId>
-        <artifactId>target-platform-configuration</artifactId>
-        <configuration>
-          <environments>
-            <environment>
-              <os>win32</os>
-              <ws>*</ws>
-              <arch>*</arch>
-            </environment>
-          </environments>
-        </configuration>
+        <!-- Avoid duplicate execution of clean when generating javadocs, see ebz#399756 -->
+        <artifactId>maven-clean-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-clean-1</id>
+            <phase>initialize</phase>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

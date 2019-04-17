@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <feature id="org.eclipse.ecf.filetransfer.httpclient45.feature" version="0.0.0">
+      <category name="core"/>
+   </feature>
+   <feature id="org.eclipse.ecf.filetransfer.httpclient45.feature.source" version="0.0.0">
+      <category name="other"/>
+   </feature>
+   <category-def name="core" label="ECF Core Features"/>
+   <category-def name="other" label="Other ECF Features"/>
+</site>
