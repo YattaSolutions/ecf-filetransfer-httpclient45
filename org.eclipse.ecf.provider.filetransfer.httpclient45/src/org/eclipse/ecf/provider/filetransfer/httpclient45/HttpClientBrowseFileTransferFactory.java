@@ -8,9 +8,8 @@
  * Contributors:
  *    Composent, Inc. - initial API and implementation
  *    Thomas Joiner - HttpClient 4 implementation
- *    Yatta Solutions - HttpClient 4.5 implementation
  *****************************************************************************/
-package org.eclipse.ecf.provider.filetransfer.httpclient45;
+package org.eclipse.ecf.provider.filetransfer.httpclient4;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -25,25 +24,21 @@ import org.eclipse.ecf.filetransfer.RemoteFileSystemException;
 import org.eclipse.ecf.filetransfer.identity.IFileID;
 import org.eclipse.ecf.filetransfer.service.IRemoteFileSystemBrowser;
 import org.eclipse.ecf.filetransfer.service.IRemoteFileSystemBrowserFactory;
-import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.Activator;
 import org.eclipse.ecf.provider.filetransfer.identity.FileTransferNamespace;
 import org.eclipse.osgi.util.NLS;
 
 public class HttpClientBrowseFileTransferFactory implements IRemoteFileSystemBrowserFactory {
 
-	@Override
 	public IRemoteFileSystemBrowser newInstance() {
 		return new IRemoteFileSystemBrowser() {
 
 			private Proxy proxy;
 			private IConnectContext connectContext;
 
-			@Override
 			public Namespace getBrowseNamespace() {
 				return IDFactory.getDefault().getNamespaceByName(FileTransferNamespace.PROTOCOL);
 			}
 
-			@Override
 			public IRemoteFileSystemRequest sendBrowseRequest(IFileID directoryOrFileId, IRemoteFileSystemListener listener) throws RemoteFileSystemException {
 				Assert.isNotNull(directoryOrFileId);
 				Assert.isNotNull(listener);
@@ -54,22 +49,19 @@ public class HttpClientBrowseFileTransferFactory implements IRemoteFileSystemBro
 					throw new RemoteFileSystemException(NLS.bind("Exception creating URL for {0}", directoryOrFileId)); //$NON-NLS-1$
 				}
 
-				HttpClientFileSystemBrowser browser = new HttpClientFileSystemBrowser(Activator.getDefault().getBrowseHttpClient(), directoryOrFileId, listener, url, connectContext, proxy);
+				HttpClientFileSystemBrowser browser = new HttpClientFileSystemBrowser(new SNIAwareHttpClient(), directoryOrFileId, listener, url, connectContext, proxy);
 				return browser.sendBrowseRequest();
 			}
 
-			@Override
 			public void setConnectContextForAuthentication(IConnectContext connectContext) {
 				this.connectContext = connectContext;
 			}
 
-			@Override
 			public void setProxy(Proxy proxy) {
 				this.proxy = proxy;
 			}
 
-			@Override
-			public <T> T getAdapter(Class<T> adapter) {
+			public Object getAdapter(Class adapter) {
 				return null;
 			}
 
