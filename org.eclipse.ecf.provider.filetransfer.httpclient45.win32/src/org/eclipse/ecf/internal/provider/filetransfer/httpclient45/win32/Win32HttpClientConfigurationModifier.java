@@ -1,9 +1,16 @@
+/*******************************************************************************
+* Copyright (c) 2019 Yatta Solutions and others. All rights reserved. This
+* program and the accompanying materials are made available under the terms of
+* the Eclipse Public License v1.0 which accompanies this distribution, and is
+* available at http://www.eclipse.org/legal/epl-v10.html
+*
+* Contributors:
+*   Yatta Solutions - initial API and implementation
+******************************************************************************/
 package org.eclipse.ecf.internal.provider.filetransfer.httpclient45.win32;
 
 import com.sun.jna.platform.win32.Sspi;
-
 import java.util.Map;
-
 import org.apache.http.auth.AuthSchemeProvider;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.AuthSchemes;
@@ -19,13 +26,12 @@ import org.apache.http.impl.auth.win.WindowsCredentialsProvider;
 import org.apache.http.impl.auth.win.WindowsNTLMSchemeFactory;
 import org.apache.http.impl.auth.win.WindowsNegotiateSchemeFactory;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.HttpClientModifierAdapter;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
-
-import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.HttpClientModifierAdapter;
 
 @Component
 public class Win32HttpClientConfigurationModifier extends HttpClientModifierAdapter {
@@ -65,8 +71,7 @@ public class Win32HttpClientConfigurationModifier extends HttpClientModifierAdap
 	@Override
 	@SuppressWarnings("restriction")
 	public CredentialsProvider modifyCredentialsProvider(CredentialsProvider credentialsProvider) {
-		if (credentialsProvider == null || !isWinAuthAvailable()
-				|| credentialsProvider instanceof WindowsCredentialsProvider) {
+		if (credentialsProvider == null || !isWinAuthAvailable() || credentialsProvider instanceof WindowsCredentialsProvider) {
 			return credentialsProvider;
 		}
 
@@ -95,16 +100,13 @@ public class Win32HttpClientConfigurationModifier extends HttpClientModifierAdap
 	}
 
 	private Lookup<AuthSchemeProvider> createAuthSchemeRegistry() {
-		Registry<AuthSchemeProvider> authSchemeRegistry = setWinAuthSchemes(
-				RegistryBuilder.<AuthSchemeProvider>create().register(AuthSchemes.BASIC, new BasicSchemeFactory())
-						.register(AuthSchemes.DIGEST, new DigestSchemeFactory())
-						.register(AuthSchemes.KERBEROS, new KerberosSchemeFactory())).build();
+		Registry<AuthSchemeProvider> authSchemeRegistry = setWinAuthSchemes(RegistryBuilder.<AuthSchemeProvider> create().register(AuthSchemes.BASIC, new BasicSchemeFactory()).register(AuthSchemes.DIGEST, new DigestSchemeFactory()).register(AuthSchemes.KERBEROS, new KerberosSchemeFactory())).build();
 		return authSchemeRegistry;
 	}
 
 	private Lookup<AuthSchemeProvider> modifyAuthSchemeRegistry(Lookup<AuthSchemeProvider> authSchemeRegistry) {
 		RegistryBuilder<AuthSchemeProvider> builder = RegistryBuilder.create();
-		for (String scheme : new String[] { AuthSchemes.BASIC, AuthSchemes.DIGEST, AuthSchemes.KERBEROS }) {
+		for (String scheme : new String[] {AuthSchemes.BASIC, AuthSchemes.DIGEST, AuthSchemes.KERBEROS}) {
 			AuthSchemeProvider provider = authSchemeRegistry.lookup(scheme);
 			if (provider != null) {
 				builder.register(scheme, provider);
@@ -119,8 +121,7 @@ public class Win32HttpClientConfigurationModifier extends HttpClientModifierAdap
 
 	@SuppressWarnings("restriction")
 	private RegistryBuilder<AuthSchemeProvider> setWinAuthSchemes(RegistryBuilder<AuthSchemeProvider> builder) {
-		return builder.register(AuthSchemes.NTLM, new WindowsNTLMSchemeFactory(servicePrincipalName))
-				.register(AuthSchemes.SPNEGO, new WindowsNegotiateSchemeFactory(servicePrincipalName));
+		return builder.register(AuthSchemes.NTLM, new WindowsNTLMSchemeFactory(servicePrincipalName)).register(AuthSchemes.SPNEGO, new WindowsNegotiateSchemeFactory(servicePrincipalName));
 	}
 
 	@Activate

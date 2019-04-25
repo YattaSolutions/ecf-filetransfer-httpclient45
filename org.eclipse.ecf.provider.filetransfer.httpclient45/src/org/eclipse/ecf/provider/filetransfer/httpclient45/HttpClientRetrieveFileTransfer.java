@@ -1,15 +1,15 @@
 /*******************************************************************************
- * Copyright (c) 2004, 2010 Composent, Inc., IBM All rights reserved. This
+ * Copyright (c) 2019 Composent, Inc., IBM All rights reserved. This
  * program and the accompanying materials are made available under the terms of
  * the Eclipse Public License v1.0 which accompanies this distribution, and is
  * available at http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
  *  Composent, Inc. - initial API and implementation
- *  Maarten Meijer - bug 237936, added gzip encoded transfer default
+ *  Maarten Meijer  - bug 237936, added gzip encoded transfer default
  *  Henrich Kraemer - bug 263869, testHttpsReceiveFile fails using HTTP proxy
  *  Henrich Kraemer - bug 263613, [transport] Update site contacting / downloading is not cancelable
- *  Thomas Joiner - HttpClient 4 implementation
+ *  Thomas Joiner   - HttpClient 4 implementation
  *  Yatta Solutions - HttpClient 4.5 implementation
  ******************************************************************************/
 package org.eclipse.ecf.provider.filetransfer.httpclient45;
@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
@@ -66,19 +65,18 @@ import org.eclipse.ecf.filetransfer.InvalidFileRangeSpecificationException;
 import org.eclipse.ecf.filetransfer.events.IFileTransferConnectStartEvent;
 import org.eclipse.ecf.filetransfer.identity.IFileID;
 import org.eclipse.ecf.internal.provider.filetransfer.DebugOptions;
-import org.eclipse.ecf.provider.filetransfer.identity.FileTransferID;
-import org.eclipse.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer;
-import org.eclipse.ecf.provider.filetransfer.retrieve.HttpHelper;
-import org.eclipse.ecf.provider.filetransfer.util.JREProxyHelper;
-import org.eclipse.ecf.provider.filetransfer.util.ProxySetupHelper;
-import org.eclipse.osgi.util.NLS;
-
 import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.Activator;
 import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.ECFHttpClientFactory;
 import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.HttpClientProxyCredentialProvider;
 import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.IHttpClientFactory;
 import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.Messages;
 import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.NTLMProxyDetector;
+import org.eclipse.ecf.provider.filetransfer.identity.FileTransferID;
+import org.eclipse.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer;
+import org.eclipse.ecf.provider.filetransfer.retrieve.HttpHelper;
+import org.eclipse.ecf.provider.filetransfer.util.JREProxyHelper;
+import org.eclipse.ecf.provider.filetransfer.util.ProxySetupHelper;
+import org.eclipse.osgi.util.NLS;
 
 public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer {
 
@@ -94,7 +92,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
 
 	protected static final String HTTP = "http"; //$NON-NLS-1$
 
-	protected static final String[] supportedProtocols = { HTTP, HTTPS };
+	protected static final String[] supportedProtocols = {HTTP, HTTPS};
 
 	private static final String LAST_MODIFIED_HEADER = "Last-Modified"; //$NON-NLS-1$
 
@@ -133,8 +131,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
 
 		IHttpClientFactory httpClientFactory = Activator.getDefault().getHttpClientFactory();
 		credentialsProvider = new ECFCredentialsProvider();
-		CredentialsProvider contextCredentialsProvider = ECFHttpClientFactory
-				.modifyCredentialsProvider(credentialsProvider);
+		CredentialsProvider contextCredentialsProvider = ECFHttpClientFactory.modifyCredentialsProvider(credentialsProvider);
 		httpContext = httpClientFactory.newClientContext();
 		httpContext.setCredentialsProvider(contextCredentialsProvider);
 		proxyHelper = new JREProxyHelper();
@@ -199,8 +196,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
 			try {
 				httpResponse.close();
 			} catch (final IOException e) {
-				Activator.getDefault()
-						.log(new Status(IStatus.ERROR, Activator.PLUGIN_ID, IStatus.ERROR, "hardClose", e)); //$NON-NLS-1$
+				Activator.getDefault().log(new Status(IStatus.ERROR, Activator.PLUGIN_ID, IStatus.ERROR, "hardClose", e)); //$NON-NLS-1$
 			}
 			httpResponse = null;
 		}
@@ -238,7 +234,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
 			return null;
 		final NameCallback usernameCallback = new NameCallback(USERNAME_PREFIX);
 		final ObjectCallback passwordCallback = new ObjectCallback();
-		callbackHandler.handle(new Callback[] { usernameCallback, passwordCallback });
+		callbackHandler.handle(new Callback[] {usernameCallback, passwordCallback});
 		username = usernameCallback.getName();
 		password = (String) passwordCallback.getObject();
 		return new UsernamePasswordCredentials(username, password);
@@ -277,8 +273,7 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
 
 	private synchronized RequestConfig.Builder getRequestConfigBuilder() {
 		if (requestConfigBuilder == null) {
-			requestConfigBuilder = Activator.getDefault().getHttpClientFactory().newRequestConfig(httpContext,
-					getOptions());
+			requestConfigBuilder = Activator.getDefault().getHttpClientFactory().newRequestConfig(httpContext, getOptions());
 		}
 		return requestConfigBuilder;
 	}
@@ -311,20 +306,17 @@ public class HttpClientRetrieveFileTransfer extends AbstractRetrieveFileTransfer
 		setRequestHeaderValuesFromOptions();
 	}
 
-	private void setRangeHeader(final IFileRangeSpecification rangeSpec, final long resumePosition)
-			throws InvalidFileRangeSpecificationException {
+	private void setRangeHeader(final IFileRangeSpecification rangeSpec, final long resumePosition) throws InvalidFileRangeSpecificationException {
 		final long startPosition;
 		final long endPosition;
 		if (rangeSpec != null) {
 			startPosition = Math.max(resumePosition, rangeSpec.getStartPosition());
 			endPosition = rangeSpec.getEndPosition();
 			if (startPosition < 0) {
-				throw new InvalidFileRangeSpecificationException(
-						Messages.HttpClientRetrieveFileTransfer_RESUME_START_POSITION_LESS_THAN_ZERO, rangeSpec);
+				throw new InvalidFileRangeSpecificationException(Messages.HttpClientRetrieveFileTransfer_RESUME_START_POSITION_LESS_THAN_ZERO, rangeSpec);
 			}
 			if (endPosition != -1L && endPosition <= startPosition) {
-				throw new InvalidFileRangeSpecificationException(
-						Messages.HttpClientRetrieveFileTransfer_RESUME_ERROR_END_POSITION_LESS_THAN_START, rangeSpec);
+				throw new InvalidFileRangeSpecificationException(Messages.HttpClientRetrieveFileTransfer_RESUME_ERROR_END_POSITION_LESS_THAN_START, rangeSpec);
 			}
 		} else if (resumePosition > 0) {
 			startPosition = resumePosition;

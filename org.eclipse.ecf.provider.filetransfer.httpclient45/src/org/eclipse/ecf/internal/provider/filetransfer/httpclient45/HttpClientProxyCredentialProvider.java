@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019 Yatta Solutions and others.
+ * Copyright (c) 2019 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,7 +14,6 @@ package org.eclipse.ecf.internal.provider.filetransfer.httpclient45;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.NTCredentials;
@@ -24,9 +23,8 @@ import org.eclipse.ecf.core.util.Proxy;
 import org.eclipse.ecf.core.util.ProxyAddress;
 import org.eclipse.ecf.core.util.Trace;
 import org.eclipse.ecf.internal.provider.filetransfer.DebugOptions;
-import org.osgi.framework.FrameworkUtil;
-
 import org.eclipse.ecf.provider.filetransfer.httpclient45.HttpClientRetrieveFileTransfer;
+import org.osgi.framework.FrameworkUtil;
 
 public class HttpClientProxyCredentialProvider extends BasicCredentialsProvider {
 	private static final String COMPUTERNAME_ENV = "COMPUTERNAME"; //$NON-NLS-1$
@@ -192,8 +190,7 @@ public class HttpClientProxyCredentialProvider extends BasicCredentialsProvider 
 	}
 
 	private static boolean isWindows() {
-		String os = FrameworkUtil.getBundle(HttpClientProxyCredentialProvider.class).getBundleContext()
-				.getProperty(OSGI_OS);
+		String os = FrameworkUtil.getBundle(HttpClientProxyCredentialProvider.class).getBundleContext().getProperty(OSGI_OS);
 		return OSGI_OS_WIN32.equalsIgnoreCase(os);
 	}
 
@@ -218,8 +215,7 @@ public class HttpClientProxyCredentialProvider extends BasicCredentialsProvider 
 				}
 			}
 		} catch (UnknownHostException e) {
-			Trace.catching(Activator.PLUGIN_ID, DebugOptions.EXCEPTIONS_CATCHING, HttpClientRetrieveFileTransfer.class,
-					"getDnsHostName", e); //$NON-NLS-1$
+			Trace.catching(Activator.PLUGIN_ID, DebugOptions.EXCEPTIONS_CATCHING, HttpClientRetrieveFileTransfer.class, "getDnsHostName", e); //$NON-NLS-1$
 		}
 		return null;
 	}
@@ -300,8 +296,7 @@ public class HttpClientProxyCredentialProvider extends BasicCredentialsProvider 
 		if (pos == -1) {
 			return userName;
 		}
-		if (userName.length() > pos + 1
-				&& (userName.charAt(pos + 1) == SLASH || userName.charAt(pos + 1) == BACKSLASH)) {
+		if (userName.length() > pos + 1 && (userName.charAt(pos + 1) == SLASH || userName.charAt(pos + 1) == BACKSLASH)) {
 			pos++;
 		}
 		if (userName.length() >= pos + 1) {

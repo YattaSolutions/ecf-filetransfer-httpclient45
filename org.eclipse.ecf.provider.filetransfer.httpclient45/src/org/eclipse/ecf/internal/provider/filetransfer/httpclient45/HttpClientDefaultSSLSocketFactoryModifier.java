@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2004, 2009 Composent, Inc., IBM and others.
+ * Copyright (c) 2019 Composent, Inc., IBM and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -8,16 +8,15 @@
  * Contributors:
  *  Composent, Inc. - initial API and implementation
  *  Henrich Kraemer - bug 263869, testHttpsReceiveFile fails using HTTP proxy
+ *  Yatta Solutions - HttpClient 4.5 implementation
  *****************************************************************************/
 
 package org.eclipse.ecf.internal.provider.filetransfer.httpclient45;
 
 import java.io.IOException;
-
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
-
 import org.eclipse.ecf.core.util.StringUtils;
 
 public class HttpClientDefaultSSLSocketFactoryModifier {
@@ -52,7 +51,7 @@ public class HttpClientDefaultSSLSocketFactoryModifier {
 			for (int i = 0; i < protocolNames.length; i++) {
 				try {
 					rtvContext = SSLContext.getInstance(protocolNames[i]);
-					sslContext.init(null, new TrustManager[] { new HttpClientSslTrustManager() }, null);
+					sslContext.init(null, new TrustManager[] {new HttpClientSslTrustManager()}, null);
 					break;
 				} catch (Exception e) {
 					// just continue

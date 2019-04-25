@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2007 IBM, Composent Inc. and others.
+ * Copyright (c) 2019 IBM, Composent Inc. and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,6 +7,7 @@
  *
  * Contributors:
  *    Chris Aniszczyk - initial API and implementation
+ *    Yatta Solutions - HttpClient 4.5 implementation
  *****************************************************************************/
 package org.eclipse.ecf.internal.provider.filetransfer.httpclient45;
 
@@ -18,9 +19,7 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-
 import javax.net.ssl.SSLSocketFactory;
-
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.eclipse.core.runtime.IStatus;
@@ -31,6 +30,7 @@ import org.eclipse.ecf.core.util.Trace;
 import org.eclipse.ecf.filetransfer.service.IRemoteFileSystemBrowser;
 import org.eclipse.ecf.filetransfer.service.IRetrieveFileTransfer;
 import org.eclipse.ecf.internal.provider.filetransfer.DebugOptions;
+import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.ECFHttpClientFactory.ModifierRunner;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
@@ -40,15 +40,12 @@ import org.osgi.service.log.LogService;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
-import org.eclipse.ecf.internal.provider.filetransfer.httpclient45.ECFHttpClientFactory.ModifierRunner;
-
 /**
  * The activator class controls the plug-in life cycle
  */
 public class Activator implements BundleActivator {
 
-	private static final class ScopedHttpClientCustomizer
-			implements ServiceTrackerCustomizer<HttpClient, CloseableHttpClient> {
+	private static final class ScopedHttpClientCustomizer implements ServiceTrackerCustomizer<HttpClient, CloseableHttpClient> {
 		private final String neededScope;
 		private final BundleContext context;
 
@@ -78,8 +75,7 @@ public class Activator implements BundleActivator {
 			String[] scopes = ((String) scopeProperty).split("\\s*,\\s*"); //$NON-NLS-1$
 			boolean hasScope = false;
 			for (String scope : scopes) {
-				if (neededScope.equals(scope)
-						|| (scope.endsWith("*") && neededScope.startsWith(scope.substring(0, scope.length() - 1)))) {
+				if (neededScope.equals(scope) || (scope.endsWith("*") && neededScope.startsWith(scope.substring(0, scope.length() - 1)))) {
 					return true;
 				}
 			}
@@ -137,8 +133,7 @@ public class Activator implements BundleActivator {
 	}
 
 	private void applyDebugOptions(BundleContext ctxt) {
-		ServiceReference<org.eclipse.osgi.service.debug.DebugOptions> debugRef = ctxt
-				.getServiceReference(org.eclipse.osgi.service.debug.DebugOptions.class);
+		ServiceReference<org.eclipse.osgi.service.debug.DebugOptions> debugRef = ctxt.getServiceReference(org.eclipse.osgi.service.debug.DebugOptions.class);
 		org.eclipse.osgi.service.debug.DebugOptions debugOptions = debugRef == null ? null : ctxt.getService(debugRef);
 		if (debugOptions == null) {
 			return;
@@ -210,8 +205,7 @@ public class Activator implements BundleActivator {
 
 	public synchronized SSLSocketFactory getSSLSocketFactory() {
 		if (sslSocketFactoryTracker == null) {
-			sslSocketFactoryTracker = new ServiceTracker<SSLSocketFactory, SSLSocketFactory>(this.context,
-					SSLSocketFactory.class, null);
+			sslSocketFactoryTracker = new ServiceTracker<SSLSocketFactory, SSLSocketFactory>(this.context, SSLSocketFactory.class, null);
 			sslSocketFactoryTracker.open();
 		}
 		SSLSocketFactory service = sslSocketFactoryTracker.getService();
@@ -220,8 +214,7 @@ public class Activator implements BundleActivator {
 
 	public synchronized INTLMProxyHandler getNTLMProxyHandler() {
 		if (ntlmProxyHandlerTracker == null) {
-			ntlmProxyHandlerTracker = new ServiceTracker<INTLMProxyHandler, INTLMProxyHandler>(this.context,
-					INTLMProxyHandler.class, null);
+			ntlmProxyHandlerTracker = new ServiceTracker<INTLMProxyHandler, INTLMProxyHandler>(this.context, INTLMProxyHandler.class, null);
 			ntlmProxyHandlerTracker.open();
 		}
 		INTLMProxyHandler service = ntlmProxyHandlerTracker.getService();
@@ -233,8 +226,7 @@ public class Activator implements BundleActivator {
 
 	public synchronized IHttpClientFactory getHttpClientFactory() {
 		if (httpClientFactoryTracker == null) {
-			httpClientFactoryTracker = new ServiceTracker<IHttpClientFactory, IHttpClientFactory>(this.context,
-					IHttpClientFactory.class, null);
+			httpClientFactoryTracker = new ServiceTracker<IHttpClientFactory, IHttpClientFactory>(this.context, IHttpClientFactory.class, null);
 			httpClientFactoryTracker.open();
 		}
 		IHttpClientFactory service = httpClientFactoryTracker.getService();
@@ -249,8 +241,7 @@ public class Activator implements BundleActivator {
 
 	public synchronized CloseableHttpClient getBrowseHttpClient() {
 		if (browseClientTracker == null) {
-			browseClientTracker = new ServiceTracker<HttpClient, CloseableHttpClient>(context, HttpClient.class,
-					new ScopedHttpClientCustomizer(context, IRemoteFileSystemBrowser.class.getName()));
+			browseClientTracker = new ServiceTracker<HttpClient, CloseableHttpClient>(context, HttpClient.class, new ScopedHttpClientCustomizer(context, IRemoteFileSystemBrowser.class.getName()));
 			browseClientTracker.open();
 		}
 		CloseableHttpClient service = browseClientTracker.getService();
@@ -262,8 +253,7 @@ public class Activator implements BundleActivator {
 
 	public synchronized CloseableHttpClient getRetrieveHttpClient() {
 		if (retrieveClientTracker == null) {
-			retrieveClientTracker = new ServiceTracker<HttpClient, CloseableHttpClient>(context, HttpClient.class,
-					new ScopedHttpClientCustomizer(context, IRetrieveFileTransfer.class.getName()));
+			retrieveClientTracker = new ServiceTracker<HttpClient, CloseableHttpClient>(context, HttpClient.class, new ScopedHttpClientCustomizer(context, IRetrieveFileTransfer.class.getName()));
 			retrieveClientTracker.open();
 		}
 		CloseableHttpClient service = retrieveClientTracker.getService();
@@ -279,8 +269,7 @@ public class Activator implements BundleActivator {
 		Dictionary<String, Object> serviceProperties = new Hashtable<String, Object>();
 		serviceProperties.put(Constants.SERVICE_RANKING, Integer.MIN_VALUE);
 		serviceProperties.put("http.client.scope", "org.eclipse.ecf.filetransfer.service.*");
-		context.registerService(new String[] { HttpClient.class.getName(), CloseableHttpClient.class.getName() },
-				client, serviceProperties);
+		context.registerService(new String[] {HttpClient.class.getName(), CloseableHttpClient.class.getName()}, client, serviceProperties);
 
 		return client;
 	}
@@ -288,8 +277,7 @@ public class Activator implements BundleActivator {
 	public static void logNoProxyWarning(Throwable e) {
 		Activator a = getDefault();
 		if (a != null) {
-			a.log(new Status(IStatus.WARNING, Activator.PLUGIN_ID, IStatus.ERROR,
-					"Warning: Platform proxy API not available", e)); //$NON-NLS-1$
+			a.log(new Status(IStatus.WARNING, Activator.PLUGIN_ID, IStatus.ERROR, "Warning: Platform proxy API not available", e)); //$NON-NLS-1$
 		}
 	}
 
@@ -321,8 +309,7 @@ public class Activator implements BundleActivator {
 			// Can't happen
 			throw new ECFRuntimeException(e);
 		}
-		List<ServiceReference<IHttpClientModifier>> orderedServices = new ArrayList<ServiceReference<IHttpClientModifier>>(
-				serviceReferences);
+		List<ServiceReference<IHttpClientModifier>> orderedServices = new ArrayList<ServiceReference<IHttpClientModifier>>(serviceReferences);
 		if (orderedServices.size() < 2) {
 			return orderedServices;
 		}
@@ -347,8 +334,7 @@ public class Activator implements BundleActivator {
 					try {
 						return Integer.parseInt((String) rankingValue);
 					} catch (NumberFormatException e) {
-						Trace.catching(Activator.PLUGIN_ID, DebugOptions.EXCEPTIONS_CATCHING, Activator.class,
-								"getServiceRanking", e); //$NON-NLS-1$
+						Trace.catching(Activator.PLUGIN_ID, DebugOptions.EXCEPTIONS_CATCHING, Activator.class, "getServiceRanking", e); //$NON-NLS-1$
 					}
 
 				}

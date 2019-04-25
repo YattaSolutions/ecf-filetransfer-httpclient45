@@ -1,3 +1,12 @@
+/*******************************************************************************
+* Copyright (c) 2019 Yatta Solutions and others. All rights reserved. This
+* program and the accompanying materials are made available under the terms of
+* the Eclipse Public License v1.0 which accompanies this distribution, and is
+* available at http://www.eclipse.org/legal/epl-v10.html
+*
+* Contributors:
+*   Yatta Solutions - initial API and implementation
+******************************************************************************/
 package org.eclipse.ecf.internal.provider.filetransfer.httpclient45;
 
 import java.io.IOException;
@@ -9,10 +18,8 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocketFactory;
-
 import org.apache.http.auth.AuthSchemeProvider;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.AuthSchemes;
@@ -36,18 +43,15 @@ import org.apache.http.util.TextUtils;
 import org.eclipse.ecf.core.util.ECFRuntimeException;
 import org.eclipse.ecf.core.util.Trace;
 import org.eclipse.ecf.internal.provider.filetransfer.DebugOptions;
+import org.eclipse.ecf.provider.filetransfer.httpclient45.HttpClientOptions;
+import org.eclipse.ecf.provider.filetransfer.httpclient45.HttpClientRetrieveFileTransfer;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 
-import org.eclipse.ecf.provider.filetransfer.httpclient45.HttpClientOptions;
-import org.eclipse.ecf.provider.filetransfer.httpclient45.HttpClientRetrieveFileTransfer;
-
 @Component
 public class ECFHttpClientFactory implements IHttpClientFactory {
-	private static final List<String> DEFAULT_PREFERRED_AUTH_SCHEMES_NO_NTLM = Arrays.asList(AuthSchemes.BASIC,
-			AuthSchemes.DIGEST);
-	private static final List<String> DEFAULT_PREFERRED_AUTH_SCHEMES = Arrays.asList(AuthSchemes.BASIC,
-			AuthSchemes.DIGEST, AuthSchemes.NTLM);
+	private static final List<String> DEFAULT_PREFERRED_AUTH_SCHEMES_NO_NTLM = Arrays.asList(AuthSchemes.BASIC, AuthSchemes.DIGEST);
+	private static final List<String> DEFAULT_PREFERRED_AUTH_SCHEMES = Arrays.asList(AuthSchemes.BASIC, AuthSchemes.DIGEST, AuthSchemes.NTLM);
 	public static final int DEFAULT_CONNECTION_TIMEOUT = HttpClientOptions.RETRIEVE_DEFAULT_CONNECTION_TIMEOUT;
 	public static final int DEFAULT_READ_TIMEOUT = HttpClientOptions.RETRIEVE_DEFAULT_READ_TIMEOUT;
 
@@ -55,14 +59,10 @@ public class ECFHttpClientFactory implements IHttpClientFactory {
 
 	public static final String NTLM_PROXY_HANDLER_ATTR = INTLMProxyHandler.class.getName();
 
-	private static final Registry<AuthSchemeProvider> DEFAULT_AUTH_SCHEME_REGISTRY = RegistryBuilder
-			.<AuthSchemeProvider>create().register(AuthSchemes.BASIC, new BasicSchemeFactory())
-			.register(AuthSchemes.DIGEST, new DigestSchemeFactory()).register(AuthSchemes.NTLM, new NTLMSchemeFactory())
-			.build();
+	private static final Registry<AuthSchemeProvider> DEFAULT_AUTH_SCHEME_REGISTRY = RegistryBuilder.<AuthSchemeProvider> create().register(AuthSchemes.BASIC, new BasicSchemeFactory()).register(AuthSchemes.DIGEST, new DigestSchemeFactory()).register(AuthSchemes.NTLM, new NTLMSchemeFactory()).build();
 
-	private static final SocketConfig DEFAULT_SOCKET_CONFIG = SocketConfig.copy(SocketConfig.DEFAULT)
-			.setSoTimeout(DEFAULT_READ_TIMEOUT).setTcpNoDelay(true)// Disable Nagle - see
-																	// https://en.wikipedia.org/wiki/Nagle%27s_algorithm#Negative_effect_on_larger_writes
+	private static final SocketConfig DEFAULT_SOCKET_CONFIG = SocketConfig.copy(SocketConfig.DEFAULT).setSoTimeout(DEFAULT_READ_TIMEOUT).setTcpNoDelay(true)// Disable Nagle - see
+			// https://en.wikipedia.org/wiki/Nagle%27s_algorithm#Negative_effect_on_larger_writes
 			// TODO is it safe to set this to 0? This will forcefully terminate sockets on
 			// close instead of waiting for graceful close
 			// See
@@ -133,18 +133,14 @@ public class ECFHttpClientFactory implements IHttpClientFactory {
 		int connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
 		int readTimeout = DEFAULT_READ_TIMEOUT;
 		if (localOptions != null) {
-			connectionRequestTimeout = getIntOption(HttpClientOptions.RETRIEVE_CONNECTION_TIMEOUT_PROP, localOptions,
-					connectionRequestTimeout);
-			connectionTimeout = getIntOption(HttpClientOptions.RETRIEVE_CONNECTION_TIMEOUT_PROP, localOptions,
-					connectionTimeout);
+			connectionRequestTimeout = getIntOption(HttpClientOptions.RETRIEVE_CONNECTION_TIMEOUT_PROP, localOptions, connectionRequestTimeout);
+			connectionTimeout = getIntOption(HttpClientOptions.RETRIEVE_CONNECTION_TIMEOUT_PROP, localOptions, connectionTimeout);
 			readTimeout = getIntOption(HttpClientOptions.RETRIEVE_READ_TIMEOUT_PROP, localOptions, readTimeout);
 		}
-		builder.setConnectionRequestTimeout(connectionRequestTimeout).setConnectTimeout(connectionTimeout)
-				.setSocketTimeout(readTimeout);
+		builder.setConnectionRequestTimeout(connectionRequestTimeout).setConnectTimeout(connectionTimeout).setSocketTimeout(readTimeout);
 
 		boolean allowNTLMAuthentication = getNTLMProxyHandler(context).allowNTLMAuthentication(localOptions);
-		Collection<String> preferredAuthSchemes = allowNTLMAuthentication ? DEFAULT_PREFERRED_AUTH_SCHEMES
-				: DEFAULT_PREFERRED_AUTH_SCHEMES_NO_NTLM;
+		Collection<String> preferredAuthSchemes = allowNTLMAuthentication ? DEFAULT_PREFERRED_AUTH_SCHEMES : DEFAULT_PREFERRED_AUTH_SCHEMES_NO_NTLM;
 		builder.setProxyPreferredAuthSchemes(preferredAuthSchemes);
 		builder.setTargetPreferredAuthSchemes(preferredAuthSchemes);
 
@@ -169,8 +165,7 @@ public class ECFHttpClientFactory implements IHttpClientFactory {
 				try {
 					value = Integer.parseInt((String) option);
 				} catch (NumberFormatException e) {
-					Trace.catching(Activator.PLUGIN_ID, DebugOptions.EXCEPTIONS_CATCHING,
-							HttpClientRetrieveFileTransfer.class, "getDnsHostName", e); //$NON-NLS-1$
+					Trace.catching(Activator.PLUGIN_ID, DebugOptions.EXCEPTIONS_CATCHING, HttpClientRetrieveFileTransfer.class, "getDnsHostName", e); //$NON-NLS-1$
 				}
 			}
 			return value;
@@ -184,8 +179,7 @@ public class ECFHttpClientFactory implements IHttpClientFactory {
 			try {
 				sslSocketFactory = new HttpClientDefaultSSLSocketFactoryModifier().getSSLSocketFactory();
 			} catch (IOException e) {
-				Trace.catching(Activator.PLUGIN_ID, DebugOptions.EXCEPTIONS_CATCHING,
-						HttpClientDefaultSSLSocketFactoryModifier.class, "getSSLSocketFactory()", e); //$NON-NLS-1$
+				Trace.catching(Activator.PLUGIN_ID, DebugOptions.EXCEPTIONS_CATCHING, HttpClientDefaultSSLSocketFactoryModifier.class, "getSSLSocketFactory()", e); //$NON-NLS-1$
 				throw new ECFRuntimeException("Unable to instantiate schemes for HttpClient.", e); //$NON-NLS-1$
 			}
 		}
@@ -199,8 +193,7 @@ public class ECFHttpClientFactory implements IHttpClientFactory {
 			String[] supportedProtocols = split(systemHttpsProtocols);
 			String[] supportedCipherSuites = split(systemCipherSuites);
 			HostnameVerifier hostnameVerifierCopy = new DefaultHostnameVerifier(publicSuffixMatcherCopy);
-			SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslSocketFactory,
-					supportedProtocols, supportedCipherSuites, hostnameVerifierCopy);
+			SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslSocketFactory, supportedProtocols, supportedCipherSuites, hostnameVerifierCopy);
 			builder.setSSLSocketFactory(sslConnectionSocketFactory);
 		}
 	}
@@ -218,8 +211,7 @@ public class ECFHttpClientFactory implements IHttpClientFactory {
 		if (collectedClients == null) {
 			return;
 		}
-		for (Reference<? extends CloseableHttpClient> collectedReference = collectedClients
-				.poll(); collectedReference != null; collectedReference = collectedClients.poll()) {
+		for (Reference<? extends CloseableHttpClient> collectedReference = collectedClients.poll(); collectedReference != null; collectedReference = collectedClients.poll()) {
 			trackedClients.remove(collectedReference);
 		}
 	}
@@ -234,8 +226,7 @@ public class ECFHttpClientFactory implements IHttpClientFactory {
 				try {
 					client.close();
 				} catch (IOException ex) {
-					Trace.catching(Activator.PLUGIN_ID, DebugOptions.EXCEPTIONS_CATCHING, ECFHttpClientFactory.class,
-							"close", ex); //$NON-NLS-1$
+					Trace.catching(Activator.PLUGIN_ID, DebugOptions.EXCEPTIONS_CATCHING, ECFHttpClientFactory.class, "close", ex); //$NON-NLS-1$
 				}
 			}
 			trackedClients = null;
@@ -267,8 +258,7 @@ public class ECFHttpClientFactory implements IHttpClientFactory {
 	}
 
 	public static INTLMProxyHandler getNTLMProxyHandler(HttpContext httpContext) {
-		Object value = httpContext == null ? null
-				: httpContext.getAttribute(ECFHttpClientFactory.NTLM_PROXY_HANDLER_ATTR);
+		Object value = httpContext == null ? null : httpContext.getAttribute(ECFHttpClientFactory.NTLM_PROXY_HANDLER_ATTR);
 		if (value instanceof INTLMProxyHandler) {
 			return (INTLMProxyHandler) value;
 		}
